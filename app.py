@@ -54,6 +54,15 @@ def init_db():
     )''')
     c.execute('INSERT OR IGNORE INTO alert_config (id) VALUES (1)')
 
+    # Watchlist per user
+    c.execute('''CREATE TABLE IF NOT EXISTS watchlist (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    INTEGER NOT NULL,
+        ticker     TEXT NOT NULL,
+        added_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, ticker)
+    )''')
+
     # Create default admin on first run
     c.execute('SELECT COUNT(*) FROM users')
     if c.fetchone()[0] == 0:
@@ -1153,6 +1162,261 @@ def api_alerts_run_now():
     cfg = get_alert_config()
     ok, msg = send_alert_email(cfg, scan['results'])
     return jsonify({'ok': ok, 'msg': msg})
+
+# ── WATCHLIST ────────────────────────────────────────────────
+@app.route('/api/watchlist', methods=['GET'])
+@login_required
+def api_watchlist_get():
+    uid = session['user_id']
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute('SELECT ticker, added_at FROM watchlist WHERE user_id=? ORDER BY added_at DESC', (uid,)).fetchall()
+    conn.close()
+    return jsonify({'tickers': [dict(r) for r in rows]})
+
+@app.route('/api/watchlist/add', methods=['POST'])
+@login_required
+def api_watchlist_add():
+    uid = session['user_id']
+    data = request.get_json() or {}
+    ticker = data.get('ticker','').strip().upper()
+    if not ticker or len(ticker) > 10:
+        return jsonify({'error': 'Invalid ticker'}), 400
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('INSERT OR IGNORE INTO watchlist (user_id, ticker) VALUES (?,?)', (uid, ticker))
+        conn.commit(); conn.close()
+        return jsonify({'ok': True, 'ticker': ticker})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/watchlist/remove', methods=['POST'])
+@login_required
+def api_watchlist_remove():
+    uid = session['user_id']
+    data = request.get_json() or {}
+    ticker = data.get('ticker','').strip().upper()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('DELETE FROM watchlist WHERE user_id=? AND ticker=?', (uid, ticker))
+    conn.commit(); conn.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/watchlist/scan', methods=['GET'])
+@login_required
+def api_watchlist_scan():
+    """Scan all watchlist tickers — price, signal, RSI, days to earnings."""
+    uid = session['user_id']
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute('SELECT ticker FROM watchlist WHERE user_id=? ORDER BY added_at DESC', (uid,)).fetchall()
+    conn.close()
+    tickers = [r[0] for r in rows]
+    if not tickers:
+        return jsonify({'results': []})
+
+    def scan_one(ticker):
+        result = {'ticker': ticker, 'name': ticker, 'sector': '—',
+                  'price': 0, 'chg': 0, 'rsi': 50, 'signal': 'NEUTRAL',
+                  'vol_ratio': 1.0, 'days_to_earn': None}
+        try:
+            t_obj = yf.Ticker(ticker)
+            hist = t_obj.history(period='3mo', auto_adjust=True)
+            if hist.empty: return None
+            last  = float(hist['Close'].iloc[-1])
+            prev  = float(hist['Close'].iloc[-2]) if len(hist)>1 else last
+            chg   = (last-prev)/prev*100
+            avg_v = float(hist['Volume'].iloc[-20:].mean())
+            today_v = float(hist['Volume'].iloc[-1])
+            vol_ratio = today_v/avg_v if avg_v>0 else 1.0
+            result['price'] = round(last,2)
+            result['chg']   = round(chg,2)
+            result['vol_ratio'] = round(vol_ratio,2)
+        except Exception:
+            return None
+        try:
+            sigs = compute_signals(hist)
+            result['rsi']    = round(sigs[-1]['rsi'],1) if sigs else 50
+            result['signal'] = sigs[-1]['sig'] if sigs else 'NEUTRAL'
+        except Exception:
+            pass
+        try:
+            info = UNI_MAP.get(ticker, {'n': ticker, 's': 'Unknown', 'b': 1.0})
+            result['name']   = info.get('n', ticker)
+            result['sector'] = info.get('s', '—')
+        except Exception:
+            pass
+        try:
+            _, earn_date = _get_earn_date(ticker)
+            if earn_date:
+                delta = (earn_date.date() - datetime.date.today()).days
+                if -5 <= delta <= 90:
+                    result['days_to_earn'] = delta
+        except Exception:
+            pass
+        return result
+
+    results = []
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(scan_one, t): t for t in tickers}
+        for f in as_completed(futures):
+            r = f.result()
+            if r: results.append(r)
+
+    results.sort(key=lambda x: tickers.index(x['ticker']) if x['ticker'] in tickers else 999)
+    return jsonify({'results': results})
+
+
+# ── ANOMALY ACCURACY BACKTEST ─────────────────────────────────
+@app.route('/api/anomaly-accuracy')
+@login_required
+def api_anomaly_accuracy():
+    """Backtest anomaly signals on 6 months of historical data."""
+    cache_key = 'anomaly_accuracy'
+    cached = _cache.get(cache_key)
+    if cached and (time.time() - cached['ts']) < 3600:
+        return jsonify(cached['data'])
+
+    # Use 30 liquid large-caps for speed
+    TEST_STOCKS = [
+        'AAPL','MSFT','NVDA','AMZN','META','GOOGL','TSLA','JPM','V','UNH',
+        'XOM','JNJ','WMT','PG','MA','HD','AVGO','LLY','CVX','MRK',
+        'ABBV','BAC','KO','PEP','TMO','COST','ADBE','CRM','AMD','NFLX'
+    ]
+
+    SECTOR_ETF_MAP = {
+        'AAPL':'XLK','MSFT':'XLK','NVDA':'XLK','AVGO':'XLK','ADBE':'XLK','CRM':'XLK','AMD':'XLK',
+        'AMZN':'XLY','TSLA':'XLY','HD':'XLY','COST':'XLY',
+        'META':'XLC','GOOGL':'XLC','NFLX':'XLC',
+        'JPM':'XLF','BAC':'XLF','V':'XLF','MA':'XLF',
+        'UNH':'XLV','JNJ':'XLV','LLY':'XLV','MRK':'XLV','ABBV':'XLV','TMO':'XLV',
+        'XOM':'XLE','CVX':'XLE',
+        'WMT':'XLP','PG':'XLP','KO':'XLP','PEP':'XLP',
+    }
+
+    # Download 9 months so we have 6m of signals + 3m of outcomes
+    all_tickers = list(set(TEST_STOCKS + list(set(SECTOR_ETF_MAP.values()))))
+    try:
+        raw = yf.download(all_tickers, period='9mo', auto_adjust=True, progress=False, threads=True)
+        closes = raw['Close'] if 'Close' in raw.columns.get_level_values(0) else raw
+    except Exception as e:
+        return jsonify({'error': str(e), 'signals': [], 'stats': {}})
+
+    signals_found = []
+    today = pd.Timestamp.today().normalize()
+
+    for ticker in TEST_STOCKS:
+        etf = SECTOR_ETF_MAP.get(ticker, 'SPY')
+        if ticker not in closes.columns or etf not in closes.columns:
+            continue
+        stock_prices = closes[ticker].dropna()
+        etf_prices   = closes[etf].dropna()
+        if len(stock_prices) < 60:
+            continue
+
+        # Align
+        common_idx = stock_prices.index.intersection(etf_prices.index)
+        sp = stock_prices.loc[common_idx]
+        ep = etf_prices.loc[common_idx]
+
+        # Scan weekly over past 6 months (only past dates, not future)
+        scan_start = today - pd.Timedelta(days=180)
+        scan_dates = [d for d in sp.index if scan_start <= d <= today - pd.Timedelta(days=25)]
+
+        for i, date in enumerate(scan_dates):
+            idx = sp.index.get_loc(date)
+            if idx < 90:
+                continue
+            # Correlation anomaly: 90d vs 15d
+            sp_90 = sp.iloc[idx-89:idx+1]
+            ep_90 = ep.iloc[idx-89:idx+1]
+            sp_15 = sp.iloc[idx-14:idx+1]
+            ep_15 = ep.iloc[idx-14:idx+1]
+            if len(sp_90) < 30 or len(sp_15) < 10:
+                continue
+            try:
+                corr_90 = float(sp_90.corr(ep_90))
+                corr_15 = float(sp_15.corr(ep_15))
+                corr_delta = corr_90 - corr_15
+            except Exception:
+                continue
+
+            # Corr score (0-40)
+            corr_score = min(40, max(0, corr_delta * 50)) if corr_delta > 0.1 else 0
+
+            # Volume ratio (0-30) — skip if no volume data
+            vol_score = 0
+            if 'Volume' in raw.columns.get_level_values(0):
+                try:
+                    vols = raw['Volume'][ticker].dropna()
+                    if idx < len(vols):
+                        avg_vol = float(vols.iloc[max(0,idx-59):idx].mean())
+                        cur_vol = float(vols.iloc[idx])
+                        if avg_vol > 0:
+                            vol_ratio = cur_vol / avg_vol
+                            vol_score = min(30, max(0, (vol_ratio - 1.0) * 20))
+                except Exception:
+                    pass
+
+            # Momentum divergence (0-30)
+            try:
+                mom_stock = (float(sp.iloc[idx]) - float(sp.iloc[idx-19])) / float(sp.iloc[idx-19]) * 100
+                mom_etf   = (float(ep.iloc[idx]) - float(ep.iloc[idx-19])) / float(ep.iloc[idx-19]) * 100
+                mom_div   = abs(mom_stock - mom_etf)
+                mom_score = min(30, mom_div * 2)
+            except Exception:
+                mom_score = 0
+
+            total_score = corr_score + vol_score + mom_score
+            if total_score < 45:
+                continue  # Only HIGH and above
+
+            sig_level = 'CRITICAL' if total_score >= 75 else 'HIGH'
+
+            # Forward returns: 5d, 10d, 20d
+            future_idx_5  = idx + 5
+            future_idx_10 = idx + 10
+            future_idx_20 = idx + 20
+            sp_arr = sp.values
+            cur_price = float(sp_arr[idx])
+            ret5  = round((float(sp_arr[future_idx_5])  - cur_price) / cur_price * 100, 2) if future_idx_5  < len(sp_arr) else None
+            ret10 = round((float(sp_arr[future_idx_10]) - cur_price) / cur_price * 100, 2) if future_idx_10 < len(sp_arr) else None
+            ret20 = round((float(sp_arr[future_idx_20]) - cur_price) / cur_price * 100, 2) if future_idx_20 < len(sp_arr) else None
+
+            signals_found.append({
+                'ticker': ticker,
+                'date': date.strftime('%Y-%m-%d'),
+                'score': round(total_score, 1),
+                'signal': sig_level,
+                'price': round(cur_price, 2),
+                'ret5': ret5, 'ret10': ret10, 'ret20': ret20,
+                'sector': SECTOR_ETF_MAP.get(ticker, '—')
+            })
+
+    # Stats
+    with_ret10 = [s for s in signals_found if s['ret10'] is not None]
+    wins = [s for s in with_ret10 if s['ret10'] > 0]
+    avg_ret = round(sum(s['ret10'] for s in with_ret10) / len(with_ret10), 2) if with_ret10 else 0
+    win_rate = round(len(wins) / len(with_ret10) * 100, 1) if with_ret10 else 0
+    critical_sigs = [s for s in signals_found if s['signal'] == 'CRITICAL']
+    crit_wins = [s for s in critical_sigs if s.get('ret10') is not None and s['ret10'] > 0]
+    crit_wr = round(len(crit_wins)/len([s for s in critical_sigs if s.get('ret10') is not None])*100,1) if critical_sigs else 0
+
+    # Sort by date desc
+    signals_found.sort(key=lambda x: x['date'], reverse=True)
+
+    result = {
+        'signals': signals_found[:80],
+        'stats': {
+            'total': len(signals_found),
+            'win_rate': win_rate,
+            'avg_ret10': avg_ret,
+            'critical_count': len(critical_sigs),
+            'critical_win_rate': crit_wr,
+            'stocks_tested': len(TEST_STOCKS)
+        }
+    }
+    _cache[cache_key] = {'ts': time.time(), 'data': result}
+    return jsonify(result)
+
 
 # ── STARTUP (runs for both gunicorn and direct python) ────────
 init_db()

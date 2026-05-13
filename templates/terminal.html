@@ -277,7 +277,8 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <div class="tab" onclick="showTab('backtest')">◎ BACKTEST</div>
   <div class="tab" onclick="showTab('risk')">⚠ RISK</div>
   <div class="tab" onclick="showTab('news')">📰 NEWS &amp; EARNINGS</div>
-  <div class="tab" onclick="showTab('anomaly')">⚡ ANOMALY SCAN</div>
+  <div class="tab" onclick="showTab('anomaly')">&#9889; ANOMALY SCAN</div>
+  <div class="tab" onclick="showTab('watchlist')">&#9733; WATCHLIST</div>
 </div>
 
 <!-- ══ SCANNER ══ -->
@@ -332,9 +333,19 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <button class="btn" id="signalExportBtn" onclick="exportSignalPDF()" style="display:none" title="Izvozi v PDF">⬇ PDF</button>
   </div>
   <div class="grid g21" style="margin-bottom:10px">
-    <div class="pnl">
-      <div class="pnl-hdr"><span class="pnl-title" id="sigChartTitle">PRICE CHART</span><span id="sigPrice" style="color:var(--cyan);font-size:12px">—</span></div>
-      <div class="pnl-body"><div style="height:260px;position:relative"><canvas id="priceChart"></canvas></div></div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="pnl">
+        <div class="pnl-hdr">
+          <span class="pnl-title" id="sigChartTitle">PRICE CHART</span>
+          <span id="sigPrice" style="color:var(--cyan);font-size:12px">—</span>
+          <span style="color:var(--text3);font-size:9px;margin-left:12px">── Price &nbsp; ── MA20 &nbsp; ── MA50 &nbsp; ── BB Bands</span>
+        </div>
+        <div class="pnl-body"><div style="height:300px;position:relative"><canvas id="priceChart"></canvas></div></div>
+      </div>
+      <div class="pnl">
+        <div class="pnl-hdr"><span class="pnl-title">RSI (14)</span><span style="color:var(--text3);font-size:9px">Overbought &gt;70 · Oversold &lt;30</span></div>
+        <div class="pnl-body"><div style="height:110px;position:relative"><canvas id="rsiChart"></canvas></div></div>
+      </div>
     </div>
     <div class="pnl">
       <div class="pnl-hdr"><span class="pnl-title">SIGNAL STRENGTH</span></div>
@@ -592,6 +603,20 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <span style="color:var(--text2)">Momentum divergenca:</span> 20d return delnice minus sektor ETF.
   </div>
 
+
+  <!-- Accuracy Backtest -->
+  <div class="pnl" style="margin-top:10px">
+    <div class="pnl-hdr" style="justify-content:space-between">
+      <span class="pnl-title">&#128200; HISTORICNA TOCNOST SIGNALOV — 6 MESECEV</span>
+      <button class="btn g" id="accBtn" onclick="runAccuracy()" style="font-size:9px;padding:3px 10px">&#9654; IZRACUNAJ TOCNOST</button>
+    </div>
+    <div class="pnl-body" id="accBody">
+      <div style="color:var(--text3);font-size:11px;padding:12px;text-align:center">
+        Klikni IZRACUNAJ TOCNOST — analizira 30 delnic na 6 mesecih podatkov (~30 sekund)
+      </div>
+    </div>
+  </div>
+
   <!-- Alert Configuration (samo admin) -->
   <div class="pnl" style="margin-top:10px" id="alertConfigPanel">
     <div class="pnl-hdr">
@@ -666,6 +691,45 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <span>|</span><span id="statusUpdate">—</span>
   <span>|</span><span>Flask + yfinance + Yahoo Finance</span>
   <span style="margin-left:auto">⚠ NOT FINANCIAL ADVICE — FOR RESEARCH ONLY</span>
+</div>
+
+<!-- == WATCHLIST == -->
+<div id="pg-watchlist" class="page">
+  <div class="inp-row">
+    <div class="inp-grp"><label>Dodaj delnico</label>
+      <input type="text" class="fi" id="wlTicker" placeholder="AAPL" style="width:100px;text-transform:uppercase"
+        onkeydown="if(event.key==='Enter')addToWatchlist()">
+    </div>
+    <button class="btn g" onclick="addToWatchlist()">+ DODAJ</button>
+    <button class="btn" onclick="scanWatchlist()" id="wlScanBtn">&#9654; SCAN ALL</button>
+    <span id="wlMsg" style="font-size:10px;color:var(--text3);margin-left:8px"></span>
+  </div>
+
+  <div class="pnl" style="margin-bottom:10px">
+    <div class="pnl-hdr">
+      <span class="pnl-title">&#9733; MOJE DELNICE</span>
+      <span style="color:var(--text3);font-size:9px" id="wlCount">0 delnic</span>
+    </div>
+    <div class="pnl-body">
+      <div class="scrl">
+        <table class="tbl" id="wlTable">
+          <thead><tr>
+            <th>#</th><th>TICKER</th><th>IME</th><th>SEKTOR</th>
+            <th>CENA</th><th>DAN %</th><th>RSI</th><th>SIGNAL</th>
+            <th>VOL/AVG</th><th>DNI DO EARN.</th><th></th>
+          </tr></thead>
+          <tbody id="wlBody">
+            <tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">
+              Dodaj delnice s poljem zgoraj
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g3" id="wlMiniCharts" style="display:none">
+  </div>
 </div>
 
 <script>
@@ -838,15 +902,78 @@ function renderPriceChart(d){
   const h=d.history.slice(-120);
   const labels=h.map(x=>x.date.slice(5));
   const closes=h.map(x=>x.close);
+  const volumes=h.map(x=>x.volume);
+
+  // MA20 and MA50
   const ma20=closes.map((_,i)=>i<19?null:closes.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20);
+  const ma50=closes.map((_,i)=>i<49?null:closes.slice(i-49,i+1).reduce((a,b)=>a+b,0)/50);
+
+  // Bollinger Bands (20d, 2 std)
+  const bbUp=[],bbLo=[];
+  closes.forEach((_,i)=>{
+    if(i<19){bbUp.push(null);bbLo.push(null);return;}
+    const sl=closes.slice(i-19,i+1);
+    const mn=sl.reduce((a,b)=>a+b,0)/20;
+    const sd=Math.sqrt(sl.reduce((a,b)=>a+(b-mn)**2,0)/20);
+    bbUp.push(mn+2*sd); bbLo.push(mn-2*sd);
+  });
+
+  // Volume scaled to bottom 20% of price axis
+  const minC=Math.min(...closes.filter(x=>x)),maxC=Math.max(...closes);
+  const maxV=Math.max(...volumes);
+  const volBars=volumes.map(v=>minC+(v/maxV)*(maxC-minC)*0.18);
+
   dc('price');
   charts.price=new Chart(document.getElementById('priceChart'),{
     type:'line',
     data:{labels,datasets:[
-      {label:d.ticker,data:closes,borderColor:C.cyan,borderWidth:1.5,fill:false,pointRadius:0,tension:.1},
-      {label:'MA20',data:ma20,borderColor:C.yellow,borderWidth:1,borderDash:[4,3],fill:false,pointRadius:0,tension:.1}
+      {label:'BB+',data:bbUp,borderColor:'rgba(0,212,255,0.2)',borderWidth:1,borderDash:[3,3],fill:false,pointRadius:0,tension:.1,order:4},
+      {label:'BB-',data:bbLo,borderColor:'rgba(0,212,255,0.2)',borderWidth:1,borderDash:[3,3],fill:'-1',backgroundColor:'rgba(0,212,255,0.04)',pointRadius:0,tension:.1,order:4},
+      {label:d.ticker,data:closes,borderColor:C.cyan,borderWidth:2,fill:false,pointRadius:0,tension:.1,order:1},
+      {label:'MA20',data:ma20,borderColor:C.yellow,borderWidth:1.5,borderDash:[5,3],fill:false,pointRadius:0,tension:.1,order:2},
+      {label:'MA50',data:ma50,borderColor:'#ff8c42',borderWidth:1.5,borderDash:[7,3],fill:false,pointRadius:0,tension:.1,order:3},
+      {label:'Vol',data:volBars,type:'bar',backgroundColor:'rgba(90,100,140,0.25)',borderColor:'transparent',borderWidth:0,pointRadius:0,order:5}
     ]},
-    options:{...DOPTS,scales:{x:{...DOPTS.scales.x},y:{...DOPTS.scales.y,ticks:{...DOPTS.scales.y.ticks,callback:v=>`$${v.toFixed(0)}`}}}}
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:200},
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{labels:{color:C.text2,font:{size:9},boxWidth:10,padding:6,filter:i=>i.text!=='BB+'&&i.text!=='BB-'&&i.text!=='Vol'}},
+        tooltip:{callbacks:{label:ctx=>{
+          if(ctx.dataset.label==='Vol') return 'Vol: '+(volumes[ctx.dataIndex]/1e6).toFixed(1)+'M';
+          if(ctx.dataset.label==='BB+'||ctx.dataset.label==='BB-') return null;
+          return ctx.dataset.label+': $'+ctx.parsed.y.toFixed(2);
+        }}}
+      },
+      scales:{
+        x:{ticks:{color:C.text2,font:{size:9},maxTicksLimit:10},grid:{color:C.border}},
+        y:{ticks:{color:C.text2,font:{size:10},callback:v=>'$'+v.toFixed(0)},grid:{color:C.border}}
+      }
+    }
+  });
+
+  // RSI chart
+  const rsiMap={};
+  (d.signals||[]).forEach(s=>rsiMap[s.date]=s.rsi);
+  const rsiData=h.map(x=>rsiMap[x.date]!==undefined?rsiMap[x.date]:null);
+  const n=labels.length;
+  dc('rsi');
+  charts.rsi=new Chart(document.getElementById('rsiChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'OB',data:Array(n).fill(70),borderColor:'rgba(255,51,85,0.4)',borderWidth:1,borderDash:[4,3],fill:false,pointRadius:0},
+      {label:'OS',data:Array(n).fill(30),borderColor:'rgba(0,232,122,0.4)',borderWidth:1,borderDash:[4,3],fill:false,pointRadius:0},
+      {label:'RSI(14)',data:rsiData,borderColor:'#8b5cf6',borderWidth:1.5,fill:false,pointRadius:0,tension:.3}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:200},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:C.text2,font:{size:9},boxWidth:10,padding:4,filter:i=>i.text==='RSI(14)'}}},
+      scales:{
+        x:{ticks:{color:C.text2,font:{size:8},maxTicksLimit:10},grid:{color:C.border}},
+        y:{min:0,max:100,ticks:{color:C.text2,font:{size:9},stepSize:25},grid:{color:C.border}}
+      }
+    }
   });
 }
 
@@ -1289,13 +1416,14 @@ function quickNewsEarnings(tick){
 // ── NAV ──────────────────────────────────────────
 function showTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('active',['scanner','signals','backtest','risk','news','anomaly'][i]===name);
+    t.classList.toggle('active',['scanner','signals','backtest','risk','news','anomaly','watchlist'][i]===name);
   });
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('pg-'+name).classList.add('on');
   if(name==='risk') updateRisk();
   if(name==='news') loadNewsEarnings();
   if(name==='anomaly') loadAlertConfig();
+  if(name==='watchlist') loadWatchlist();
 }
 
 // ── ANOMALY SCANNER ────────────────────────────────
@@ -1740,6 +1868,170 @@ function startMarketTicker(){
   }
   refresh();
   setInterval(refresh,60000);
+}
+
+
+
+// -- ANOMALY ACCURACY --
+async function runAccuracy(){
+  const btn = document.getElementById('accBtn');
+  const body = document.getElementById('accBody');
+  btn.disabled = true; btn.textContent = 'Racunam...';
+  body.innerHTML = '<div style="color:var(--yellow);padding:16px;text-align:center">'+
+    '<div style="font-size:12px;margin-bottom:6px">Analiziram 30 delnic na 6 mesecih zgodovinskih podatkov...</div>'+
+    '<div style="color:var(--text3);font-size:10px">Preverjam korelacije, volumne, momentum za vsak dan — prosim pocakaj ~30s</div></div>';
+
+  const r = await fetch('/api/anomaly-accuracy').then(r=>r.json()).catch(()=>({error:'Napaka pri povezavi'}));
+  btn.disabled = false; btn.textContent = '&#9654; IZRACUNAJ TOCNOST';
+
+  if(r.error){
+    body.innerHTML = '<div style="color:var(--red);padding:12px">&#9888; '+r.error+'</div>';
+    return;
+  }
+
+  const s = r.stats;
+  const wrColor = s.win_rate >= 60 ? 'var(--green)' : s.win_rate >= 50 ? 'var(--yellow)' : 'var(--red)';
+  const retColor = s.avg_ret10 >= 0 ? 'var(--green)' : 'var(--red)';
+
+  // Stats row
+  let html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid var(--border);margin-bottom:0">';
+  const stats = [
+    {l:'SKUPAJ SIGNALOV', v: s.total, c:'var(--cyan)'},
+    {l:'WIN RATE (10d)', v: s.win_rate+'%', c: wrColor},
+    {l:'AVG RETURN 10d', v: (s.avg_ret10>=0?'+':'')+s.avg_ret10+'%', c: retColor},
+    {l:'CRITICAL SIGNALI', v: s.critical_count, c:'var(--red)'},
+    {l:'CRITICAL WIN RATE', v: s.critical_win_rate+'%', c: s.critical_win_rate>=60?'var(--green)':'var(--yellow)'},
+  ];
+  html += stats.map(st=>'<div style="text-align:center;padding:16px 8px;border-right:1px solid var(--border)">'+
+    '<div style="font-size:22px;font-weight:800;font-family:var(--mono);color:'+st.c+'">'+st.v+'</div>'+
+    '<div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:4px">'+st.l+'</div></div>').join('');
+  html += '</div>';
+
+  // Win rate bar
+  html += '<div style="padding:10px 12px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">'+
+    '<span style="font-size:10px;color:var(--text3);min-width:80px">WIN RATE</span>'+
+    '<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">'+
+    '<div style="height:100%;width:'+s.win_rate+'%;background:linear-gradient(90deg,var(--cyan),'+wrColor+');border-radius:4px"></div></div>'+
+    '<span style="font-size:11px;font-weight:700;color:'+wrColor+'">'+s.win_rate+'%</span>'+
+    '<span style="font-size:10px;color:var(--text3)">testirano na '+s.stocks_tested+' delnicah</span></div>';
+
+  // Signals table
+  if(r.signals && r.signals.length){
+    html += '<div class="scrl" style="max-height:280px"><table class="tbl"><thead><tr>'+
+      '<th>DATUM</th><th>TICKER</th><th>SEKTOR</th><th>SCORE</th><th>SIGNAL</th>'+
+      '<th>CENA</th><th>RET 5d</th><th>RET 10d</th><th>RET 20d</th></tr></thead><tbody>';
+    html += r.signals.map(s=>{
+      const sc = s.signal==='CRITICAL'?'bdg-sell':'bdg-buy';
+      const r5c = s.ret5!==null?cc(s.ret5):'';
+      const r10c = s.ret10!==null?cc(s.ret10):'';
+      const r20c = s.ret20!==null?cc(s.ret20):'';
+      return '<tr>'+
+        '<td style="color:var(--text3)">'+s.date+'</td>'+
+        '<td><b style="color:var(--cyan)">'+s.ticker+'</b></td>'+
+        '<td style="color:var(--text3);font-size:10px">'+s.sector+'</td>'+
+        '<td><span style="color:'+(s.score>=75?'var(--red)':'var(--yellow)')+'">'+s.score+'</span></td>'+
+        '<td><span class="bdg '+sc+'">'+s.signal+'</span></td>'+
+        '<td>$'+s.price+'</td>'+
+        '<td class="'+r5c+'">'+  (s.ret5!==null?(s.ret5>=0?'+':'')+s.ret5+'%':'—')+'</td>'+
+        '<td class="'+r10c+'">'+  (s.ret10!==null?(s.ret10>=0?'+':'')+s.ret10+'%':'—')+'</td>'+
+        '<td class="'+r20c+'">'+  (s.ret20!==null?(s.ret20>=0?'+':'')+s.ret20+'%':'—')+'</td>'+
+        '</tr>';
+    }).join('');
+    html += '</tbody></table></div>';
+  }
+  body.innerHTML = html;
+}
+
+// -- WATCHLIST --
+let _wlData = [];
+
+async function loadWatchlist(){
+  const r = await fetch('/api/watchlist').then(r=>r.json()).catch(()=>({tickers:[]}));
+  _wlData = r.tickers || [];
+  document.getElementById('wlCount').textContent = _wlData.length + ' delnic';
+  if(!_wlData.length){
+    document.getElementById('wlBody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Dodaj delnice s poljem zgoraj</td></tr>';
+    return;
+  }
+  renderWatchlistSkeleton();
+}
+
+function renderWatchlistSkeleton(){
+  document.getElementById('wlBody').innerHTML = _wlData.map((t,i)=>
+    '<tr id="wlr-'+t.ticker+'"><td>'+(i+1)+'</td><td><b style="color:var(--cyan)">'+t.ticker+'</b></td>'
+    +'<td colspan="9" style="color:var(--text3)">Klikni SCAN ALL za podatke</td></tr>'
+  ).join('');
+}
+
+async function addToWatchlist(){
+  const input = document.getElementById('wlTicker');
+  const ticker = input.value.trim().toUpperCase();
+  const msg = document.getElementById('wlMsg');
+  if(!ticker){return;}
+  msg.style.color='var(--yellow)'; msg.textContent='Dodajam...';
+  const r = await fetch('/api/watchlist/add',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ticker})}).then(r=>r.json()).catch(e=>({error:e.message}));
+  if(r.ok){
+    msg.style.color='var(--green)'; msg.textContent=ticker+' dodan!';
+    input.value='';
+    await loadWatchlist();
+  } else {
+    msg.style.color='var(--red)'; msg.textContent=r.error||'Napaka';
+  }
+  setTimeout(()=>msg.textContent='', 3000);
+}
+
+async function removeFromWatchlist(ticker){
+  await fetch('/api/watchlist/remove',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ticker})});
+  await loadWatchlist();
+}
+
+async function scanWatchlist(){
+  if(!_wlData.length){
+    document.getElementById('wlMsg').textContent='Najprej dodaj delnice';
+    return;
+  }
+  const btn = document.getElementById('wlScanBtn');
+  const msg = document.getElementById('wlMsg');
+  btn.disabled=true; btn.textContent='Skeniram...';
+  msg.style.color='var(--yellow)'; msg.textContent='Nalagam podatke...';
+  
+  const r = await fetch('/api/watchlist/scan').then(r=>r.json()).catch(()=>({results:[]}));
+  btn.disabled=false; btn.textContent='&#9654; SCAN ALL';
+  
+  if(!r.results||!r.results.length){
+    msg.style.color='var(--red)'; msg.textContent='Ni podatkov — preveri tickerje';
+    renderWatchlistSkeleton();
+    return;
+  }
+  
+  msg.style.color='var(--green)'; msg.textContent='Posodobljeno '+new Date().toLocaleTimeString();
+  document.getElementById('wlCount').textContent = r.results.length + ' delnic';
+  
+  document.getElementById('wlBody').innerHTML = r.results.map((s,i)=>{
+    const sc = s.signal==='BUY'?'up':s.signal==='SELL'?'dn':'';
+    const rc = s.signal==='BUY'?'buy-row':s.signal==='SELL'?'sell-row':'';
+    const earnCol = s.days_to_earn!==null?(s.days_to_earn<=14?'<span style="color:var(--red);font-weight:700">'+s.days_to_earn+'d</span>':s.days_to_earn+'d'):'—';
+    const rsiCol = s.rsi>70?'<span class="dn">'+s.rsi+'</span>':s.rsi<30?'<span class="up">'+s.rsi+'</span>':s.rsi;
+    const volCol = s.vol_ratio>2?'<span style="color:var(--yellow)">'+s.vol_ratio+'x</span>':s.vol_ratio+'x';
+    return '<tr class="'+rc+'" style="cursor:pointer" onclick="quickSig(this.dataset.t)" data-t="'+s.ticker+'" title="Odpri v Signals">'
+      +'<td style="color:var(--text3)">'+(i+1)+'</td>'
+      +'<td><b style="color:var(--cyan)">'+s.ticker+'</b></td>'
+      +'<td style="color:var(--text2);font-size:11px">'+s.name+'</td>'
+      +'<td style="color:var(--text3);font-size:10px">'+s.sector+'</td>'
+      +'<td>$'+s.price.toFixed(2)+'</td>'
+      +'<td class="'+cc(s.chg)+'">'+fmt(s.chg)+'</td>'
+      +'<td>'+rsiCol+'</td>'
+      +'<td><span class="bdg bdg-'+(s.signal==='BUY'?'buy':s.signal==='SELL'?'sell':'neu')+'">'+s.signal+'</span></td>'
+      +'<td>'+volCol+'</td>'
+      +'<td>'+earnCol+'</td>'
+      +'<td><button onclick="event.stopPropagation();removeFromWatchlist(this.dataset.t)" data-t="'+s.ticker+'" '
+      +'style="background:transparent;border:1px solid var(--red);color:var(--red);padding:2px 6px;font-size:9px;cursor:pointer;border-radius:2px;font-family:var(--mono)">X</button></td>'
+      +'</tr>';
+  }).join('');
 }
 
 // -- BOOT --
