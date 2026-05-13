@@ -701,15 +701,37 @@ def api_news(ticker):
             raw = yf.Ticker(ticker).news or []
             out = []
             for n in raw[:20]:
-                title = n.get('title','')
+                # Support both old and new yfinance news structure
+                content = n.get('content', {})
+                if content:
+                    # New yfinance format (0.2.50+)
+                    title     = content.get('title', '')
+                    publisher = (content.get('provider') or {}).get('displayName', '')
+                    link      = (content.get('canonicalUrl') or {}).get('url', '') or (content.get('clickThroughUrl') or {}).get('url', '')
+                    pub_raw   = content.get('pubDate', '')
+                    try:
+                        import dateutil.parser as dp
+                        ts = int(dp.parse(pub_raw).timestamp()) if pub_raw else int(time.time())
+                    except Exception:
+                        ts = int(time.time())
+                    tickers = [t.get('symbol','') for t in (content.get('finance',{}).get('stockTickers') or []) if t.get('symbol')][:4]
+                else:
+                    # Old yfinance format
+                    title     = n.get('title', '')
+                    publisher = n.get('publisher', '')
+                    link      = n.get('link', '')
+                    ts        = n.get('providerPublishTime', int(time.time()))
+                    tickers   = n.get('relatedTickers', [])[:4]
+                if not title:
+                    continue
                 out.append({
                     'title':     title,
-                    'publisher': n.get('publisher',''),
-                    'link':      n.get('link',''),
-                    'time':      n.get('providerPublishTime', 0),
-                    'relTime':   _rel_time(n.get('providerPublishTime', time.time())),
+                    'publisher': publisher,
+                    'link':      link,
+                    'time':      ts,
+                    'relTime':   _rel_time(ts),
                     'sentiment': _sentiment(title),
-                    'tickers':   n.get('relatedTickers', [])[:4],
+                    'tickers':   tickers,
                 })
             return out
         except Exception as e:
