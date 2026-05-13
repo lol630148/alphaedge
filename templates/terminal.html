@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ AI Quant Research Terminal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#05080f;--bg2:#090d18;--bg3:#0d1220;--panel:#0a0f1c;
+  --border:#162035;--bord2:#1e2f48;
+  --cyan:#00d4ff;--green:#00e87a;--red:#ff3355;--yellow:#ffc200;
+  --orange:#ff7b2c;--purple:#a07fff;
+  --text:#dde6f0;--text2:#7090b0;--text3:#354d68;
+  --mono:'Courier New',Courier,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:2px}
+
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 14px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.logo{font-size:15px;font-weight:bold;color:var(--cyan);letter-spacing:3px;
+  text-shadow:0 0 18px rgba(0,212,255,.35);white-space:nowrap}
+.logo small{display:block;color:var(--text3);font-size:9px;letter-spacing:2px;margin-top:1px}
+.mkt{display:flex;gap:18px;flex:1;flex-wrap:wrap}
+.mi .lbl{color:var(--text3);font-size:8px;letter-spacing:1px;text-transform:uppercase}
+.mi .val{font-size:13px;font-weight:bold}
+.mi .chg{font-size:10px}
+.up{color:var(--green)}.dn{color:var(--red)}.flat{color:var(--yellow)}
+.clk{color:var(--text2);font-size:11px;white-space:nowrap;margin-left:auto}
+
+/* BUTTONS */
+.btn{background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:4px 10px;
+  font-family:var(--mono);font-size:10px;cursor:pointer;border-radius:2px;transition:background .15s}
+.btn:hover{background:rgba(0,212,255,.08)}
+.btn.g{border-color:var(--green);color:var(--green)}.btn.g:hover{background:rgba(0,232,122,.08)}
+.btn.r{border-color:var(--red);color:var(--red)}.btn.r:hover{background:rgba(255,51,85,.08)}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tab{padding:9px 20px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;
+  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;user-select:none}
+.tab:hover{color:var(--text2)}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+/* LAYOUT */
+.page{display:none;padding:12px;padding-bottom:36px}
+.page.on{display:block}
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.g21{grid-template-columns:2fr 1fr}.g12{grid-template-columns:1fr 2fr}
+
+/* PANELS */
+.pnl{background:var(--panel);border:1px solid var(--border);border-radius:2px;overflow:hidden}
+.pnl-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;
+  border-bottom:1px solid var(--border);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2)}
+.pnl-title{color:var(--cyan);font-weight:bold}
+.pnl-body{padding:10px}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{color:var(--text3);font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:5px 7px;
+  text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{padding:5px 7px;border-bottom:1px solid rgba(22,32,53,.5);font-size:11px;vertical-align:middle}
+.tbl tr:hover td{background:rgba(0,212,255,.025)}
+.tbl tr.buy-row td{border-left:2px solid var(--green)}
+.tbl tr.sell-row td{border-left:2px solid var(--red)}
+.scrl{overflow-y:auto;max-height:280px}
+
+/* BADGES */
+.bdg{display:inline-block;padding:1px 6px;border-radius:2px;font-size:8px;letter-spacing:.8px;text-transform:uppercase;font-weight:bold}
+.bdg-buy{background:rgba(0,232,122,.12);color:var(--green);border:1px solid rgba(0,232,122,.3)}
+.bdg-sell{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.3)}
+.bdg-watch{background:rgba(255,194,0,.12);color:var(--yellow);border:1px solid rgba(255,194,0,.3)}
+.bdg-neu{background:rgba(53,77,104,.3);color:var(--text2);border:1px solid var(--border)}
+.bdg-long{background:rgba(0,232,122,.12);color:var(--green);border:1px solid rgba(0,232,122,.25)}
+.bdg-short{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.25)}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.sb{background:var(--bg3);border:1px solid var(--border);padding:9px 8px;text-align:center;border-radius:2px}
+.sb .sv{font-size:20px;font-weight:bold}.sb .sl{color:var(--text3);font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* GAUGES */
+.gauge-wrap{margin-bottom:12px}
+.gauge-lbl{color:var(--text2);font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.gauge-bar{width:100%;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.gauge-val{font-size:13px;font-weight:bold;margin-top:3px}
+
+/* ALERTS */
+.alert{padding:7px 10px;border-left:3px solid;margin-bottom:5px;font-size:11px;
+  background:rgba(255,255,255,.015);border-radius:0 2px 2px 0}
+.alert-buy{border-color:var(--green)}.alert-sell{border-color:var(--red)}.alert-watch{border-color:var(--yellow)}
+.alert .atk{font-weight:bold;color:var(--cyan);margin-right:7px}
+.alert .arm{color:var(--text2);font-size:10px}
+
+/* HEATMAP */
+.hmap{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.hmap-cell{padding:9px 4px;text-align:center;border-radius:2px}
+.hmap-cell .ht{font-weight:bold;font-size:10px}
+.hmap-cell .hn{font-size:8px;color:rgba(255,255,255,.5);margin-top:1px}
+.hmap-cell .hv{font-size:10px;font-weight:bold;margin-top:2px}
+
+/* INPUTS */
+.inp-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}
+.inp-grp{display:flex;flex-direction:column;gap:3px}
+.inp-grp label{color:var(--text3);font-size:8px;letter-spacing:1px;text-transform:uppercase}
+input.fi,select.fi{background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:5px 7px;font-family:var(--mono);font-size:11px;border-radius:2px}
+input.fi:focus,select.fi:focus{outline:none;border-color:var(--cyan)}
+
+/* RISK */
+.risk-metric{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border)}
+.risk-metric .rk{color:var(--text3);font-size:9px}
+.risk-metric .rv{font-size:12px;font-weight:bold}
+
+/* STATUS BAR */
+.sbar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);
+  border-top:1px solid var(--border);padding:4px 14px;display:flex;align-items:center;
+  gap:16px;font-size:9px;color:var(--text3);z-index:100;letter-spacing:.5px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-right:4px;animation:blink 2s infinite}
+.dot.red{background:var(--red)}.dot.yellow{background:var(--yellow)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* LOADER */
+.loader{text-align:center;padding:24px;color:var(--text3)}
+.loader::after{content:'...';animation:dots 1.2s infinite}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+
+/* LIVE BADGE */
+.live-badge{background:rgba(0,232,122,.12);color:var(--green);border:1px solid rgba(0,232,122,.3);
+  padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px}
+
+hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
+.sig-box{background:rgba(0,0,0,.3);padding:9px;border-radius:2px;border-left:3px solid}
+.sig-box p{color:var(--text2);font-size:10px;line-height:1.7;margin-top:5px}
+
+@media(max-width:700px){.g2,.g3,.g12,.g21{grid-template-columns:1fr}.sg{grid-template-columns:1fr 1fr}.hmap{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo"><span style="color:var(--cyan);font-weight:900;">α</span> AlphaEdge<small>AI-POWERED QUANT RESEARCH · LIVE DATA</small></div>
+  <div class="mkt">
+    <div class="mi"><div class="lbl">S&amp;P 500</div><div class="val" id="hSP">—</div><div class="chg" id="hSPc">—</div></div>
+    <div class="mi"><div class="lbl">NASDAQ</div><div class="val" id="hNQ">—</div><div class="chg" id="hNQc">—</div></div>
+    <div class="mi"><div class="lbl">VIX</div><div class="val" id="hVIX">—</div><div class="chg" id="hVIXc">—</div></div>
+    <div class="mi"><div class="lbl">SPY</div><div class="val" id="hSPY">—</div><div class="chg" id="hSPYc">—</div></div>
+  </div>
+  <span class="live-badge">● LIVE</span>
+  <div class="clk" id="clk">--:--:--</div>
+<script>
+(function(){
+  function tick(){
+    var n=new Date();
+    var el=document.getElementById('clk');
+    if(el) el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  }
+  tick(); setInterval(tick,1000);
+})();
+</script>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:8px">
+    <span style="color:var(--text3);font-size:9px;letter-spacing:1px">
+      ◈ <span style="color:var(--cyan)">{{ username }}</span>
+    </span>
+    {% if is_admin %}<button class="btn" onclick="showAdminPanel()" style="font-size:9px;padding:2px 7px" title="Upravljanje uporabnikov">⚙ ADMIN</button>{% endif %}
+    <button class="btn" onclick="showChangePwModal()" style="font-size:9px;padding:2px 7px" title="Spremeni geslo">🔑 GESLO</button>
+    <a href="/logout" class="btn r" style="font-size:9px;padding:2px 7px;text-decoration:none">↩ ODJAVA</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  function sv(vi,ci,d,pre){
+    if(!d)return;
+    var v=document.getElementById(vi);
+    var c=document.getElementById(ci);
+    if(v) v.textContent=(pre||'')+d.price.toFixed(2);
+    if(c){c.textContent=(d.chg>=0?'+':'')+d.chg.toFixed(2)+'%';c.style.color=d.chg>=0?'#00e87a':'#ff3355';}
+  }
+  function refresh(){
+    fetch('/api/header-prices').then(function(r){return r.json();}).then(function(d){
+      sv('hSP','hSPc',d.sp500,'');
+      sv('hNQ','hNQc',d.nasdaq,'$');
+      sv('hVIX','hVIXc',d.vix,'');
+      sv('hSPY','hSPYc',d.spy,'$');
+    }).catch(function(){});
+  }
+  // Wait for page to load then fetch
+  window.addEventListener('DOMContentLoaded',function(){refresh();setInterval(refresh,60000);});
+})();
+</script>
+<!-- CHANGE PASSWORD MODAL (vsi userji) -->
+<div id="changePwModal" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.92);z-index:300;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--bord2);border-radius:3px;width:360px;max-width:95vw;box-shadow:0 0 60px rgba(0,212,255,.1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">🔑 SPREMENI GESLO</span>
+      <button onclick="hideChangePwModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="padding:16px">
+      <div style="margin-bottom:12px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">TRENUTNO GESLO</div>
+        <input type="password" id="cpOldPw" class="fi" placeholder="••••••••" style="width:100%">
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">NOVO GESLO</div>
+        <input type="password" id="cpNewPw" class="fi" placeholder="••••••••" style="width:100%">
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">PONOVI NOVO GESLO</div>
+        <input type="password" id="cpNewPw2" class="fi" placeholder="••••••••" style="width:100%">
+      </div>
+      <div id="cpMsg" style="font-size:10px;margin-bottom:10px;min-height:14px"></div>
+      <button class="btn g" onclick="submitChangePw()" style="width:100%;padding:8px;letter-spacing:1px">SHRANI NOVO GESLO</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL (modal) -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.92);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--bord2);border-radius:3px;width:520px;max-width:95vw;padding:0;box-shadow:0 0 60px rgba(0,212,255,.1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">⚙ UPRAVLJANJE UPORABNIKOV</span>
+      <button onclick="hideAdminPanel()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="padding:14px">
+
+      <!-- User list -->
+      <div style="margin-bottom:16px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">AKTIVNI UPORABNIKI</div>
+        <div id="adminUserList" style="max-height:180px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Add user -->
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">DODAJ NOVEGA UPORABNIKA</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end">
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">USERNAME</div>
+            <input type="text" id="newUserName" class="fi" placeholder="john" style="width:100%"></div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">GESLO</div>
+            <input type="password" id="newUserPw" class="fi" placeholder="••••••" style="width:100%"></div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">EMAIL</div>
+            <input type="text" id="newUserEmail" class="fi" placeholder="john@firm.com" style="width:100%"></div>
+          <button class="btn g" onclick="adminAddUser()" style="white-space:nowrap">+ DODAJ</button>
+        </div>
+        <div id="adminAddMsg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
+      </div>
+
+      <!-- Change password -->
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">SPREMENI SVOJE GESLO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end">
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">STARO GESLO</div>
+            <input type="password" id="oldPw" class="fi" placeholder="••••••" style="width:100%"></div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">NOVO GESLO</div>
+            <input type="password" id="newPw" class="fi" placeholder="••••••" style="width:100%"></div>
+          <button class="btn" onclick="adminChangePw()">SHRANI</button>
+        </div>
+        <div id="adminPwMsg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showTab('scanner')">◈ SCANNER</div>
+  <div class="tab" onclick="showTab('signals')">▲ SIGNALS</div>
+  <div class="tab" onclick="showTab('backtest')">◎ BACKTEST</div>
+  <div class="tab" onclick="showTab('risk')">⚠ RISK</div>
+  <div class="tab" onclick="showTab('news')">📰 NEWS &amp; EARNINGS</div>
+  <div class="tab" onclick="showTab('anomaly')">⚡ ANOMALY SCAN</div>
+</div>
+
+<!-- ══ SCANNER ══ -->
+<div id="pg-scanner" class="page on">
+  <div class="grid g2" style="margin-bottom:10px">
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-title">◈ TOP MOVERS — LIVE</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn g" onclick="showMovers('g')">▲ GAIN</button>
+          <button class="btn r" onclick="showMovers('l')">▼ LOSE</button>
+          <button class="btn"   onclick="showMovers('a')">⚡ VOL</button>
+          <button class="btn"   onclick="loadMovers()">⟳</button>
+        </div>
+      </div>
+      <div class="pnl-body"><div class="scrl" id="moversBox"><div class="loader">Nalagam žive podatke</div></div></div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-title">⚡ ANOMALY ALERTS</span><span id="alertCnt" style="color:var(--yellow);font-size:9px">—</span></div>
+      <div class="pnl-body"><div class="scrl" id="alertsBox"><div class="loader">Analiziram</div></div></div>
+    </div>
+  </div>
+  <div class="pnl" style="margin-bottom:10px">
+    <div class="pnl-hdr"><span class="pnl-title">▦ SECTOR HEATMAP — LIVE</span><span style="color:var(--text3);font-size:8px">1-DAY RETURN</span></div>
+    <div class="pnl-body"><div class="hmap" id="heatmap"><div class="loader" style="grid-column:1/-1">Nalagam sektorje</div></div></div>
+  </div>
+  <div class="pnl">
+    <div class="pnl-hdr"><span class="pnl-title">◉ VOLUME ANOMALY SCAN</span><span style="color:var(--text3);font-size:8px">RATIO vs 20D AVG</span></div>
+    <div class="pnl-body"><div style="height:190px;position:relative"><canvas id="volChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ══ SIGNALS ══ -->
+<div id="pg-signals" class="page">
+  <div class="inp-row">
+    <div class="inp-grp"><label>Ticker</label><input type="text" class="fi" id="sigTicker" value="AAPL" style="width:90px;text-transform:uppercase"></div>
+    <div class="inp-grp"><label>Signal Type</label>
+      <select class="fi" id="sigType">
+        <option value="mom">Momentum (20d)</option>
+        <option value="rsi">Mean Reversion (RSI)</option>
+        <option value="rel">Relative Strength vs SPY</option>
+      </select>
+    </div>
+    <div class="inp-grp"><label>Period</label>
+      <select class="fi" id="sigPeriod">
+        <option value="3mo">3 Months</option>
+        <option value="6mo" selected>6 Months</option>
+        <option value="1y">1 Year</option>
+      </select>
+    </div>
+    <button class="btn g" onclick="runSignal()">ANALYZE ▶</button>
+    <button class="btn" id="signalExportBtn" onclick="exportSignalPDF()" style="display:none" title="Izvozi v PDF">⬇ PDF</button>
+  </div>
+  <div class="grid g21" style="margin-bottom:10px">
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-title" id="sigChartTitle">PRICE CHART</span><span id="sigPrice" style="color:var(--cyan);font-size:12px">—</span></div>
+      <div class="pnl-body"><div style="height:260px;position:relative"><canvas id="priceChart"></canvas></div></div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-title">SIGNAL STRENGTH</span></div>
+      <div class="pnl-body" id="gaugesBox"><div class="loader">Čakam na analizo</div></div>
+    </div>
+  </div>
+  <div class="pnl">
+    <div class="pnl-hdr"><span class="pnl-title">◉ SIGNAL HISTORY — REAL DATA</span><span style="color:var(--text3);font-size:8px">LAST 25 — WITH OUTCOME</span></div>
+    <div class="pnl-body"><div class="scrl"><table class="tbl"><thead><tr><th>DATE</th><th>SIGNAL</th><th>PRICE</th><th>RSI</th><th>MOM 20D</th><th>OUT +5D</th><th>OUT +20D</th></tr></thead><tbody id="sigHistBody"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- ══ BACKTEST ══ -->
+<div id="pg-backtest" class="page">
+  <div class="inp-row">
+    <div class="inp-grp"><label>Strategy</label>
+      <select class="fi" id="btStrat">
+        <option value="mom">Momentum — 20d Breakout</option>
+        <option value="rsi">Mean Reversion — RSI</option>
+        <option value="pairs">Pairs — Relative Value</option>
+      </select>
+    </div>
+    <div class="inp-grp"><label>Universe</label>
+      <select class="fi" id="btUni">
+        <option value="sp">S&amp;P 500 Large Cap</option>
+        <option value="tech">Tech Mega Cap</option>
+        <option value="etf">Sector ETFs</option>
+      </select>
+    </div>
+    <div class="inp-grp"><label>Period</label>
+      <select class="fi" id="btPeriod">
+        <option value="1y">1 Year</option>
+        <option value="2y">2 Years</option>
+        <option value="5y">5 Years</option>
+      </select>
+    </div>
+    <div class="inp-grp"><label>Hold (days)</label>
+      <select class="fi" id="btHold">
+        <option value="5">5 Days</option>
+        <option value="10">10 Days</option>
+        <option value="20">20 Days</option>
+      </select>
+    </div>
+    <button class="btn g" onclick="runBacktest()">▶ RUN</button>
+  </div>
+  <div class="sg" style="margin-bottom:10px">
+    <div class="sb"><div class="sv" id="btRet">—</div><div class="sl">Total Return</div></div>
+    <div class="sb"><div class="sv" id="btSharpe">—</div><div class="sl">Sharpe Ratio</div></div>
+    <div class="sb"><div class="sv dn" id="btDD">—</div><div class="sl">Max Drawdown</div></div>
+    <div class="sb"><div class="sv" id="btWin">—</div><div class="sl">Win Rate</div></div>
+    <div class="sb"><div class="sv" id="btTrades">—</div><div class="sl"># Trades</div></div>
+    <div class="sb"><div class="sv" id="btCalmar">—</div><div class="sl">Calmar Ratio</div></div>
+  </div>
+  <div class="grid g2" style="margin-bottom:10px">
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-title">▲ EQUITY CURVE — REAL DATA</span><span style="color:var(--text3);font-size:8px">vs SPY BENCHMARK</span></div>
+      <div class="pnl-body"><div style="height:220px;position:relative"><canvas id="eqChart"></canvas></div></div>
+    </div>
+    <div class="pnl">
+      <div class="pnl-hdr"><span class="pnl-title">▼ DRAWDOWN</span><span id="ddLbl" style="color:var(--red);font-size:9px">MAX DD: —</span></div>
+      <div class="pnl-body"><div style="height:220px;position:relative"><canvas id="ddChart"></canvas></div></div>
+    </div>
+  </div>
+  <div class="pnl">
+    <div class="pnl-hdr"><span class="pnl-title">◉ TRADE LOG</span><span style="color:var(--text3);font-size:8px">NET OF 0.05% TRANSACTION COST</span></div>
+    <div class="pnl-body scrl" style="max-height:250px">
+      <table class="tbl"><thead><tr><th>#</th><th>TICKER</th><th>ENTRY</th><th>EXIT</th><th>DIR</th><th>ENTRY $</th><th>EXIT $</th><th>P&amp;L %</th><th>REASON</th></tr></thead><tbody id="tradeBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RISK ══ -->
+<div id="pg-risk" class="page">
+  <div class="pnl" style="margin-bottom:10px">
+    <div class="pnl-hdr"><span class="pnl-title">⚡ PORTFOLIO BUILDER</span></div>
+    <div class="pnl-body">
+      <div class="scrl" style="max-height:190px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&L $</th><th>P&L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"></tbody></table></div>
+      <hr class="dv">
+      <div class="inp-row" style="margin-bottom:0">
+        <div class="inp-grp"><label>Ticker</label><input type="text" class="fi" id="nTick" placeholder="AAPL" style="width:75px;text-transform:uppercase"></div>
+        <div class="inp-grp"><label>Direction</label><select class="fi" id="nDir"><option>LONG</option><option>SHORT</option></select></div>
+        <div class="inp-grp"><label>Qty</label><input type="number" class="fi" id="nQty" value="100" style="width:70px"></div>
+        <div class="inp-grp"><label>Entry $</label><input type="number" class="fi" id="nEntry" placeholder="150" style="width:85px"></div>
+        <div class="inp-grp"><label>Current $</label><input type="number" class="fi" id="nCur" placeholder="155" style="width:85px"></div>
+        <div class="inp-grp"><label>Sector</label><select class="fi" id="nSec"><option>Technology</option><option>Healthcare</option><option>Financials</option><option>Energy</option><option>Consumer</option><option>Industrials</option><option>Materials</option><option>Utilities</option></select></div>
+        <div class="inp-grp"><label>Stop %</label><input type="number" class="fi" id="nStop" value="5" style="width:65px"></div>
+        <button class="btn g" onclick="addPos()">+ ADD</button>
+      </div>
+    </div>
+  </div>
+  <div class="grid g3" style="margin-bottom:10px">
+    <div class="pnl"><div class="pnl-hdr"><span class="pnl-title">⚠ RISK METRICS</span></div><div class="pnl-body" id="riskMetBox"></div></div>
+    <div class="pnl"><div class="pnl-hdr"><span class="pnl-title">▦ SECTOR EXPOSURE</span></div><div class="pnl-body"><div style="height:185px;position:relative"><canvas id="secChart"></canvas></div></div></div>
+    <div class="pnl"><div class="pnl-hdr"><span class="pnl-title">◈ CORRELATION</span><span id="corrLbl" style="color:var(--text3);font-size:8px">90D REAL DATA</span></div><div class="pnl-body" id="corrBox"></div></div>
+  </div>
+  <div class="pnl">
+    <div class="pnl-hdr"><span class="pnl-title">▲ RISK SUMMARY</span></div>
+    <div class="pnl-body"><div class="sg">
+      <div class="sb"><div class="sv dn" id="rVaR">$0</div><div class="sl">1-Day VaR 95%</div></div>
+      <div class="sb"><div class="sv dn" id="rCVaR">$0</div><div class="sl">CVaR (Exp. Shortfall)</div></div>
+      <div class="sb"><div class="sv" id="rExp">$0</div><div class="sl">Total Exposure</div></div>
+      <div class="sb"><div class="sv" id="rBeta">0.00</div><div class="sl">Portfolio Beta</div></div>
+      <div class="sb"><div class="sv dn" id="rMaxLoss">$0</div><div class="sl">Max Stop-Loss Risk</div></div>
+      <div class="sb"><div class="sv" id="rConc">0%</div><div class="sl">Largest Position</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══ NEWS & EARNINGS ══ -->
+<div id="pg-news" class="page">
+
+  <!-- Ticker selector -->
+  <div class="inp-row" style="margin-bottom:10px">
+    <div class="inp-grp"><label>Ticker</label>
+      <input type="text" class="fi" id="newsTicker" value="AAPL" style="width:90px;text-transform:uppercase">
+    </div>
+    <button class="btn g" onclick="loadNewsEarnings()">LOAD ▶</button>
+    <button class="btn" onclick="loadEarningsCalendar()" style="margin-left:8px">📅 UNIVERSE CALENDAR</button>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:10px">
+
+    <!-- News Feed -->
+    <div class="pnl">
+      <div class="pnl-hdr">
+        <span class="pnl-title">📰 NEWS FEED — LIVE</span>
+        <span id="newsTickerLbl" style="color:var(--text2);font-size:9px">—</span>
+      </div>
+      <div class="pnl-body">
+        <div class="scrl" style="max-height:420px" id="newsFeed">
+          <div class="loader">Izberi ticker in klikni LOAD</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earnings Panel -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+
+      <!-- Next Earnings -->
+      <div class="pnl">
+        <div class="pnl-hdr"><span class="pnl-title">📅 NEXT EARNINGS</span></div>
+        <div class="pnl-body" id="earningsNext">
+          <div class="loader">Čakam na load</div>
+        </div>
+      </div>
+
+      <!-- EPS Surprise Chart -->
+      <div class="pnl" style="flex:1">
+        <div class="pnl-hdr">
+          <span class="pnl-title">◉ EPS — ACTUAL vs ESTIMATE</span>
+          <span style="color:var(--text3);font-size:8px">LAST 8 QUARTERS</span>
+        </div>
+        <div class="pnl-body"><div style="height:200px;position:relative"><canvas id="epsChart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universe Earnings Calendar -->
+  <div class="pnl" id="earningsCalPanel" style="display:none">
+    <div class="pnl-hdr">
+      <span class="pnl-title">📅 EARNINGS CALENDAR — WHOLE UNIVERSE</span>
+      <span id="calLoadingLbl" style="color:var(--yellow);font-size:9px"></span>
+    </div>
+    <div class="pnl-body">
+      <div class="scrl"><table class="tbl" id="earningsCalTable">
+        <thead><tr><th>TICKER</th><th>NAME</th><th>SECTOR</th><th>NEXT EARNINGS</th><th>EPS ESTIMATE</th><th>DAYS AWAY</th></tr></thead>
+        <tbody id="earningsCalBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ ANOMALY SCANNER ══ -->
+<div id="pg-anomaly" class="page">
+
+  <!-- Header row -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:14px;font-weight:bold;color:var(--cyan);letter-spacing:2px">⚡ PRE-EARNINGS ANOMALY SCANNER</div>
+      <div style="color:var(--text3);font-size:9px;letter-spacing:1px;margin-top:2px">Iščemo nenavadne korelacijske, volumske in momentum vzorce pri ~150 S&P 500 delnicah pred earnings</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="anomalyFilterLbl" style="color:var(--text3);font-size:9px">FILTER:</span>
+      <select id="anomalyFilter" class="fi" style="width:110px;font-size:10px" onchange="renderAnomalyTable()">
+        <option value="ALL">VSE STOPNJE</option>
+        <option value="CRITICAL">⚠ CRITICAL</option>
+        <option value="HIGH">▲ HIGH</option>
+        <option value="MEDIUM">◈ MEDIUM</option>
+        <option value="LOW">▽ LOW</option>
+      </select>
+      <button class="btn g" id="anomalyScanBtn" onclick="runAnomalyScan()" style="padding:5px 14px;font-size:11px;letter-spacing:1px">▶ RUN SCAN</button>
+      <button class="btn" id="anomalyExportBtn" onclick="exportAnomalyPDF()" style="padding:5px 12px;font-size:11px;display:none" title="Izvozi v PDF">⬇ PDF</button>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px" id="anomalyStats">
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--text2)" id="aStat1">—</div><div class="sl">SCANNED</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--cyan)"  id="aStat2">—</div><div class="sl">Z EARNINGS (14d)</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--red)"   id="aStat3">—</div><div class="sl">ANOMALIJE</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--yellow)" id="aStat4">—</div><div class="sl">ČAS SKENIRANJA</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--text3)" id="aStat5">—</div><div class="sl">POSODOBLJENO</div></div>
+  </div>
+
+  <!-- Score legend -->
+  <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="font-size:9px;color:var(--text3);letter-spacing:1px;align-self:center">ANOMALY SCORE:</div>
+    <span class="bdg" style="background:rgba(255,51,85,.15);color:var(--red);border:1px solid rgba(255,51,85,.4)">⚠ CRITICAL ≥65</span>
+    <span class="bdg" style="background:rgba(255,123,44,.15);color:var(--orange);border:1px solid rgba(255,123,44,.4)">▲ HIGH ≥45</span>
+    <span class="bdg" style="background:rgba(255,194,0,.12);color:var(--yellow);border:1px solid rgba(255,194,0,.35)">◈ MEDIUM ≥25</span>
+    <span class="bdg" style="background:rgba(112,144,176,.1);color:var(--text2);border:1px solid var(--border)">▽ LOW &lt;25</span>
+    <div style="font-size:9px;color:var(--text3);margin-left:12px;align-self:center">SESTAVLJEN IZ: Korelacijska anomalija (40pt) + Volumska anomalija (30pt) + Momentum divergenca (30pt)</div>
+  </div>
+
+  <!-- Results table -->
+  <div class="pnl">
+    <div class="pnl-hdr">
+      <span class="pnl-title" id="anomalyTableTitle">REZULTATI — KLIKNI RUN SCAN</span>
+      <span style="color:var(--text3);font-size:8px">RAZVRŠČENO PO ANOMALY SCORE ↓</span>
+    </div>
+    <div class="pnl-body" style="padding:0">
+      <div id="anomalyMsg" style="padding:24px;text-align:center;color:var(--text3);font-size:11px">
+        Pritisni <span style="color:var(--green)">▶ RUN SCAN</span> — pregledamo ~150 delnic in poiščemo sumljive vzorce pred earnings.<br>
+        <span style="font-size:9px;opacity:.6">Skeniranje traja ~25-35 sekund (live Yahoo Finance podatki)</span>
+      </div>
+      <div class="scrl" style="max-height:480px;display:none" id="anomalyTableWrap">
+        <table class="tbl" id="anomalyTable">
+          <thead><tr>
+            <th>#</th>
+            <th>TICKER</th>
+            <th>SEKTOR</th>
+            <th>CENA</th>
+            <th>DAN %</th>
+            <th>DNI DO EARN.</th>
+            <th title="90-dnevna korelacija s sektorjem">CORR 90d</th>
+            <th title="15-dnevna korelacija s sektorjem">CORR 15d</th>
+            <th title="Padec korelacije = dekorrelacija od sektorja">CORR Δ</th>
+            <th title="Volumen zadnjih 10d vs 90d povprečje">VOL RATIO</th>
+            <th title="Delnica vs sektor ETF, 20-dnevni return">MOM DIV</th>
+            <th title="Skupni anomaly score 0-100">SCORE</th>
+            <th>SIGNAL</th>
+          </tr></thead>
+          <tbody id="anomalyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methodology note -->
+  <div style="margin-top:10px;padding:10px 12px;background:rgba(0,212,255,.03);border:1px solid var(--border);border-radius:2px;font-size:9px;color:var(--text3);line-height:1.7">
+    <span style="color:var(--cyan);font-weight:bold">METODOLOGIJA</span> &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Korelacijska anomalija:</span> 90-dnevna vs 15-dnevna korelacija z sektorskim ETF. Padec = dekorrelacija pred earnings. &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Volumska anomalija:</span> 10d vs 90d povprecje — ratio &gt;1.5x = nenavadna aktivnost. &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Momentum divergenca:</span> 20d return delnice minus sektor ETF.
+  </div>
+
+  <!-- Alert Configuration (samo admin) -->
+  <div class="pnl" style="margin-top:10px" id="alertConfigPanel">
+    <div class="pnl-hdr">
+      <span class="pnl-title">&#128276; EMAIL ALERT KONFIGURACIJA</span>
+      <span style="color:var(--text3);font-size:8px">Avtomatski email ob anomalijah — samo admin</span>
+    </div>
+    <div class="pnl-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">SMTP SERVER</div>
+          <input type="text" id="alertSmtpHost" class="fi" value="smtp.gmail.com" style="width:100%">
+        </div>
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">PORT</div>
+          <input type="number" id="alertSmtpPort" class="fi" value="587" style="width:100%">
+        </div>
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">CAS POSILJANJA</div>
+          <input type="time" id="alertSendTime" class="fi" value="07:00" style="width:100%">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">GMAIL / EMAIL NASLOV (posiljatelj)</div>
+          <input type="text" id="alertSmtpUser" class="fi" placeholder="vas@gmail.com" style="width:100%">
+        </div>
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">APP GESLO (Gmail App Password)</div>
+          <input type="password" id="alertSmtpPass" class="fi" placeholder="xxxx xxxx xxxx xxxx" style="width:100%">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">PREJEMNIKI (loceni z vejico)</div>
+          <input type="text" id="alertRecipients" class="fi" placeholder="stranka@firma.com, boss@firma.com" style="width:100%">
+        </div>
+        <div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">MIN. SIGNAL STOPNJA</div>
+          <select id="alertMinSignal" class="fi" style="width:100%">
+            <option value="CRITICAL">Samo CRITICAL</option>
+            <option value="HIGH" selected>HIGH in visje</option>
+            <option value="MEDIUM">MEDIUM in visje</option>
+            <option value="LOW">Vse anomalije</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="alertEnabled" style="width:14px;height:14px">
+          <span style="color:var(--text2);font-size:10px">OMOGOCI DNEVNE ALERTE</span>
+        </label>
+        <button class="btn g" onclick="saveAlertConfig()" style="font-size:10px">SHRANI</button>
+        <button class="btn" onclick="testAlertEmail()" style="font-size:10px">TESTIRAJ EMAIL</button>
+        <button class="btn" onclick="runAlertNow()" style="font-size:10px;border-color:var(--yellow);color:var(--yellow)">POŠLJI ZDAJ</button>
+        <span id="alertMsg" style="font-size:10px;color:var(--text3)"></span>
+      </div>
+      <div style="margin-top:10px;padding:8px;background:rgba(255,194,0,.05);border:1px solid rgba(255,194,0,.2);border-radius:2px;font-size:9px;color:var(--text3);line-height:1.6">
+        <span style="color:var(--yellow)">GMAIL NAVODILA:</span>
+        1. Vklopi 2-faktorsko avtentikacijo na Google racunu &nbsp;|&nbsp;
+        2. Pojdi na myaccount.google.com &rarr; Varnost &rarr; App passwords &nbsp;|&nbsp;
+        3. Ustvari App Password za "Mail" &nbsp;|&nbsp;
+        4. Vstavi 16-znakovni kod v polje App Geslo zgoraj
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div class="sbar">
+  <span><span class="dot" id="statusDot"></span><span id="statusTxt">Vzpostavljam povezavo…</span></span>
+  <span>|</span><span id="statusUpdate">—</span>
+  <span>|</span><span>Flask + yfinance + Yahoo Finance</span>
+  <span style="margin-left:auto">⚠ NOT FINANCIAL ADVICE — FOR RESEARCH ONLY</span>
+</div>
+
+<script>
+'use strict';
+const C={cyan:'#00d4ff',green:'#00e87a',red:'#ff3355',yellow:'#ffc200',
+  orange:'#ff7b2c',purple:'#a07fff',bg:'#05080f',bg3:'#0d1220',
+  border:'#162035',text:'#dde6f0',text2:'#7090b0',text3:'#354d68'};
+
+// ── UTIL ────────────────────────────────────────
+const fmt=(v,d=2)=>(v>=0?'+':'')+v.toFixed(d)+'%';
+const fmtD=v=>{const a=Math.abs(v);return a>=1e6?`$${(v/1e6).toFixed(2)}M`:a>=1e3?`$${(v/1e3).toFixed(1)}K`:`$${v.toFixed(2)}`;};
+const cc=v=>v>0?'up':v<0?'dn':'flat';
+const cx=v=>v>0?C.green:v<0?C.red:C.yellow;
+const hc=p=>{if(p>3)return'rgba(0,232,122,.80)';if(p>1.5)return'rgba(0,232,122,.50)';if(p>0.4)return'rgba(0,232,122,.25)';if(p>-0.4)return'rgba(53,77,104,.5)';if(p>-1.5)return'rgba(255,51,85,.25)';if(p>-3)return'rgba(255,51,85,.50)';return'rgba(255,51,85,.80)';};
+
+let charts={};
+function dc(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+const DOPTS={responsive:true,maintainAspectRatio:false,animation:{duration:300},
+  plugins:{legend:{labels:{color:C.text2,font:{size:10},boxWidth:14,padding:10}},tooltip:{mode:'index',intersect:false}},
+  scales:{x:{ticks:{color:C.text2,font:{size:9},maxTicksLimit:10},grid:{color:C.border}},
+          y:{ticks:{color:C.text2,font:{size:10}},grid:{color:C.border}}}};
+
+function setStatus(txt,color='green'){
+  document.getElementById('statusTxt').textContent=txt;
+  const dot=document.getElementById('statusDot');
+  dot.className='dot'+(color!=='green'?' '+color:'');
+  document.getElementById('statusUpdate').textContent='UPDATE: '+new Date().toLocaleTimeString();
+}
+
+// ── HEADER PRICES ───────────────────────────────
+async function loadHeader(){
+  try{
+    const res=await fetch('/api/stock/SPY?period=5d');
+    const d=await res.json();
+    if(d.price){
+      document.getElementById('hSPY').textContent='$'+d.price.toFixed(2);
+      const el=document.getElementById('hSPYc');
+      el.textContent=fmt(d.chg); el.className='chg '+cc(d.chg);
+    }
+  }catch(e){}
+
+  // Approximate SPX / NQ from sector data
+  try{
+    const res=await fetch('/api/stock/QQQ?period=5d');
+    const d=await res.json();
+    document.getElementById('hNQ').textContent='$'+d.price.toFixed(2);
+    const el=document.getElementById('hNQc'); el.textContent=fmt(d.chg); el.className='chg '+cc(d.chg);
+  }catch(e){}
+
+  try{
+    const res=await fetch('/api/stock/VIX?period=5d');
+    const d=await res.json();
+    document.getElementById('hVIX').textContent=d.price.toFixed(2);
+  }catch(e){}
+}
+
+// ── SCANNER ─────────────────────────────────────
+let allStocks=[], moverMode='g';
+
+async function loadMovers(){
+  document.getElementById('moversBox').innerHTML='<div class="loader">Nalagam žive podatke</div>';
+  setStatus('Nalagam top movers iz Yahoo Finance…','yellow');
+  try{
+    const res=await fetch('/api/movers');
+    const d=await res.json();
+    allStocks=d.stocks||[];
+    showMovers(moverMode);
+    renderAlerts();
+    renderVolChart();
+    setStatus(`✓ Live podatki naloženi — ${allStocks.length} delnic`);
+  }catch(e){
+    document.getElementById('moversBox').innerHTML='<div style="color:var(--red);padding:12px">⚠ Napaka pri nalaganju. Preveri da teče Flask server.</div>';
+    setStatus('⚠ Napaka pri nalaganju podatkov','red');
+  }
+}
+
+async function loadSectors(){
+  try{
+    const res=await fetch('/api/sectors');
+    const d=await res.json();
+    renderHeatmap(d.sectors||[]);
+  }catch(e){console.error(e);}
+}
+
+function showMovers(mode){
+  moverMode=mode;
+  const sorted=[...allStocks].sort((a,b)=>
+    mode==='g'?b.chg-a.chg:mode==='l'?a.chg-b.chg:b.volRatio-a.volRatio
+  ).slice(0,12);
+  if(!sorted.length){document.getElementById('moversBox').innerHTML='<div class="loader">Nalagam</div>';return;}
+  document.getElementById('moversBox').innerHTML=`
+    <table class="tbl">
+      <thead><tr><th>TICKER</th><th>PRICE</th><th>CHG%</th><th>VOLUME</th><th>VOL/AVG</th></tr></thead>
+      <tbody>${sorted.map(s=>`<tr onclick="quickSig('${s.t}')" style="cursor:pointer">
+        <td><b style="color:var(--cyan)">${s.t}</b><br><span style="color:var(--text3);font-size:9px">${s.n.substring(0,14)}</span></td>
+        <td>$${s.price.toFixed(2)}</td>
+        <td class="${cc(s.chg)}">${fmt(s.chg)}</td>
+        <td>${(s.volume/1e6).toFixed(1)}M</td>
+        <td class="${s.volRatio>1.5?'up':''}">${s.volRatio.toFixed(1)}×</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function renderAlerts(){
+  const alerts=[];
+  allStocks.forEach(s=>{
+    if(s.volRatio>2.0) alerts.push({type:'watch',t:s.t,msg:`Volume ${s.volRatio.toFixed(1)}× iznad 20D povprečja — nenavadna aktivnost`});
+    if(s.chg>3.5)      alerts.push({type:'buy',  t:s.t,msg:`Preboj +${s.chg.toFixed(1)}% — momentum kandidat`});
+    if(s.chg<-3.5)     alerts.push({type:'sell', t:s.t,msg:`Padec ${s.chg.toFixed(1)}% — potencialen short`});
+  });
+  const top=alerts.slice(0,10);
+  document.getElementById('alertCnt').textContent=top.length+' SIGNALS';
+  document.getElementById('alertsBox').innerHTML=top.length
+    ? top.map(a=>`<div class="alert alert-${a.type}"><span class="atk">${a.t}</span><span class="bdg bdg-${a.type==='buy'?'buy':a.type==='sell'?'sell':'watch'}">${a.type.toUpperCase()}</span><span class="arm"> — ${a.msg}</span></div>`).join('')
+    : '<div style="color:var(--text3);padding:10px">Ni signifikantnih anomalij danes.</div>';
+}
+
+function renderHeatmap(sectors){
+  document.getElementById('heatmap').innerHTML=sectors.map(s=>`
+    <div class="hmap-cell" style="background:${hc(s.ret)};color:${s.ret>0?C.green:C.red}">
+      <div class="ht">${s.etf}</div><div class="hn">${s.name}</div>
+      <div class="hv">${fmt(s.ret)}</div>
+    </div>`).join('');
+}
+
+function renderVolChart(){
+  const top=allStocks.slice(0,10);
+  if(!top.length) return;
+  const cols=top.map(s=>s.volRatio>2?C.yellow:s.volRatio>1.5?C.green:C.text3);
+  dc('vol');
+  charts.vol=new Chart(document.getElementById('volChart'),{
+    type:'bar',
+    data:{labels:top.map(s=>s.t),datasets:[{label:'Vol/20D avg',data:top.map(s=>s.volRatio),backgroundColor:cols,borderColor:cols,borderWidth:1}]},
+    options:{...DOPTS,plugins:{...DOPTS.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}×`}}},
+      scales:{...DOPTS.scales,y:{...DOPTS.scales.y,ticks:{...DOPTS.scales.y.ticks,callback:v=>`${v.toFixed(1)}×`}}}}
+  });
+}
+
+// ── SIGNALS ─────────────────────────────────────
+let currentStockData=null;
+
+async function runSignal(){
+  const ticker=document.getElementById('sigTicker').value.toUpperCase().trim();
+  const period=document.getElementById('sigPeriod').value;
+  if(!ticker) return;
+  document.getElementById('gaugesBox').innerHTML='<div class="loader">Nalagam '+ticker+'</div>';
+  document.getElementById('sigHistBody').innerHTML='';
+  document.getElementById('sigChartTitle').textContent=ticker+' — nalagam…';
+  setStatus(`Nalagam ${ticker} iz Yahoo Finance…`,'yellow');
+  try{
+    const res=await fetch(`/api/stock/${ticker}?period=${period}`);
+    if(!res.ok) throw new Error('Not found');
+    const d=await res.json();
+    currentStockData=d;
+    document.getElementById('signalExportBtn').style.display='inline-block';
+    document.getElementById('sigChartTitle').textContent=`${ticker} — LIVE PRICE + MA20`;
+    document.getElementById('sigPrice').textContent=`$${d.price.toFixed(2)}  ${fmt(d.chg)}`;
+    document.getElementById('sigPrice').className=cc(d.chg);
+    renderPriceChart(d);
+    renderGauges(d);
+    renderSigHistory(d);
+    setStatus(`✓ ${ticker} naložen — ${d.history.length} dni zgodovine`);
+  }catch(e){
+    document.getElementById('gaugesBox').innerHTML=`<div style="color:var(--red);padding:10px">⚠ Ticker "${ticker}" ni najden ali napaka pri nalaganju.</div>`;
+    setStatus('⚠ Napaka pri nalaganju '+ticker,'red');
+  }
+}
+
+function renderPriceChart(d){
+  const h=d.history.slice(-120);
+  const labels=h.map(x=>x.date.slice(5));
+  const closes=h.map(x=>x.close);
+  const ma20=closes.map((_,i)=>i<19?null:closes.slice(i-19,i+1).reduce((a,b)=>a+b,0)/20);
+  dc('price');
+  charts.price=new Chart(document.getElementById('priceChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:d.ticker,data:closes,borderColor:C.cyan,borderWidth:1.5,fill:false,pointRadius:0,tension:.1},
+      {label:'MA20',data:ma20,borderColor:C.yellow,borderWidth:1,borderDash:[4,3],fill:false,pointRadius:0,tension:.1}
+    ]},
+    options:{...DOPTS,scales:{x:{...DOPTS.scales.x},y:{...DOPTS.scales.y,ticks:{...DOPTS.scales.y.ticks,callback:v=>`$${v.toFixed(0)}`}}}}
+  });
+}
+
+function renderGauges(d){
+  const sg=d.signals.at(-1)||{rsi:50,mom:0,sig:'NEUTRAL'};
+  const rsi=sg.rsi,mom=sg.mom;
+  const momN=Math.min(100,Math.max(0,(mom+15)/30*100));
+  const volN=Math.min(100,(d.volRatio/3)*100);
+  let compN=50;
+  if(sg.sig==='BUY') compN=72+Math.random()*12;
+  if(sg.sig==='SELL') compN=12+Math.random()*12;
+  const gauges=[
+    {l:'RSI (14)',v:rsi,disp:rsi.toFixed(1),col:rsi>70?C.red:rsi<30?C.green:C.yellow},
+    {l:'MOMENTUM 20D',v:momN,disp:fmt(mom),col:mom>0?C.green:C.red},
+    {l:'VOLUME STRENGTH',v:volN,disp:`${d.volRatio.toFixed(1)}×`,col:C.purple},
+    {l:'COMPOSITE SIGNAL',v:compN,disp:sg.sig,col:sg.sig==='BUY'?C.green:sg.sig==='SELL'?C.red:C.yellow},
+  ];
+  const sc=sg.sig==='BUY'?C.green:sg.sig==='SELL'?C.red:C.yellow;
+  document.getElementById('gaugesBox').innerHTML=
+    gauges.map(g=>`<div class="gauge-wrap">
+      <div class="gauge-lbl">${g.l}</div>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:${g.v}%;background:${g.col};box-shadow:0 0 8px ${g.col}40"></div></div>
+      <div class="gauge-val" style="color:${g.col}">${g.disp}</div></div>`).join('')+
+    `<hr class="dv"><div class="sig-box" style="border-color:${sc}40">
+      <div style="color:${sc};font-weight:bold;font-size:11px">▶ SIGNAL: ${sg.sig}</div>
+      <p>RSI: <b style="color:var(--text)">${rsi.toFixed(1)}</b> — ${rsi>70?'overbought':rsi<30?'oversold':'neutral'}<br>
+      Momentum 20d: <span style="color:${mom>0?C.green:C.red}">${fmt(mom)}</span><br>
+      Sektor: <b style="color:var(--text)">${d.sector}</b> | Beta: ${d.beta}<br>
+      Vol ratio: <b style="color:var(--text)">${d.volRatio.toFixed(1)}×</b></p></div>`;
+}
+
+function renderSigHistory(d){
+  const sigs=d.signals.slice(-25).reverse();
+  document.getElementById('sigHistBody').innerHTML=sigs.map(sg=>{
+    const pi=d.history.findIndex(h=>h.date===sg.date);
+    const o5=pi>=0&&pi+5<d.history.length?(d.history[pi+5].close-d.history[pi].close)/d.history[pi].close*100:null;
+    const o20=pi>=0&&pi+20<d.history.length?(d.history[pi+20].close-d.history[pi].close)/d.history[pi].close*100:null;
+    const bc={BUY:'bdg-buy',SELL:'bdg-sell',NEUTRAL:'bdg-neu'}[sg.sig]||'bdg-neu';
+    const rc=sg.sig==='BUY'?'buy-row':sg.sig==='SELL'?'sell-row':'';
+    return `<tr class="${rc}">
+      <td style="color:var(--text3)">${sg.date}</td>
+      <td><span class="bdg ${bc}">${sg.sig}</span></td>
+      <td>$${sg.price.toFixed(2)}</td>
+      <td class="${sg.rsi>70?'dn':sg.rsi<30?'up':''}">${sg.rsi}</td>
+      <td class="${sg.mom>0?'up':'dn'}">${fmt(sg.mom)}</td>
+      <td class="${o5!==null?cc(o5):''}">${o5!==null?fmt(o5):'—'}</td>
+      <td class="${o20!==null?cc(o20):''}">${o20!==null?fmt(o20):'—'}</td></tr>`;
+  }).join('');
+}
+
+function quickSig(tick){showTab('signals');document.getElementById('sigTicker').value=tick;runSignal();}
+
+// ── BACKTEST ─────────────────────────────────────
+async function runBacktest(){
+  const strat=document.getElementById('btStrat').value;
+  const period=document.getElementById('btPeriod').value;
+  const hold=document.getElementById('btHold').value;
+  const uni=document.getElementById('btUni').value;
+  ['btRet','btSharpe','btDD','btWin','btTrades','btCalmar'].forEach(id=>document.getElementById(id).textContent='…');
+  document.getElementById('tradeBody').innerHTML='';
+  setStatus(`Zaganjam backtest (${strat}, ${period})…`,'yellow');
+  try{
+    const res=await fetch(`/api/backtest?strategy=${strat}&period=${period}&holding=${hold}&universe=${uni}`);
+    const d=await res.json();
+    if(d.error) throw new Error(d.error);
+    const s=d.stats;
+    document.getElementById('btRet').textContent=fmt(s.return,1);
+    document.getElementById('btRet').className='sv '+cc(s.return);
+    document.getElementById('btSharpe').textContent=s.sharpe.toFixed(2);
+    document.getElementById('btSharpe').className='sv '+(s.sharpe>1?'up':s.sharpe>0?'flat':'dn');
+    document.getElementById('btDD').textContent=fmt(s.maxDD,1);
+    document.getElementById('btWin').textContent=s.winRate.toFixed(1)+'%';
+    document.getElementById('btTrades').textContent=s.trades;
+    document.getElementById('btCalmar').textContent=s.calmar.toFixed(2);
+    document.getElementById('btCalmar').className='sv '+(s.calmar>1?'up':s.calmar>0?'flat':'dn');
+    document.getElementById('ddLbl').textContent=`MAX DD: ${fmt(s.maxDD,1)}`;
+
+    const step=Math.max(1,Math.floor(d.labels.length/12));
+    const lbls=d.labels.map((l,i)=>i%step===0?l.slice(0,7):'');
+
+    dc('eq');
+    charts.eq=new Chart(document.getElementById('eqChart'),{type:'line',
+      data:{labels:lbls,datasets:[
+        {label:'Strategy',data:d.equity,borderColor:C.green,borderWidth:2,fill:false,pointRadius:0,tension:.1},
+        {label:'SPY Benchmark',data:d.benchmark,borderColor:C.text3,borderWidth:1,borderDash:[4,4],fill:false,pointRadius:0,tension:.1}
+      ]},
+      options:{...DOPTS,scales:{x:{...DOPTS.scales.x},y:{...DOPTS.scales.y,ticks:{...DOPTS.scales.y.ticks,callback:v=>`${v}%`}}}}
+    });
+
+    dc('dd');
+    charts.dd=new Chart(document.getElementById('ddChart'),{type:'line',
+      data:{labels:lbls,datasets:[{label:'Drawdown',data:d.drawdown,borderColor:C.red,borderWidth:1.5,fill:true,backgroundColor:'rgba(255,51,85,.08)',pointRadius:0,tension:.1}]},
+      options:{...DOPTS,plugins:{...DOPTS.plugins,legend:{display:false}},
+        scales:{x:{...DOPTS.scales.x},y:{...DOPTS.scales.y,ticks:{...DOPTS.scales.y.ticks,callback:v=>`${v.toFixed(1)}%`}}}}
+    });
+
+    document.getElementById('tradeBody').innerHTML=(d.trades||[]).map(t=>`
+      <tr class="${t.pnl>0?'buy-row':'sell-row'}">
+        <td style="color:var(--text3)">${t.n}</td>
+        <td style="color:var(--cyan)">${t.t}</td>
+        <td style="color:var(--text3)">${t.ed}</td>
+        <td style="color:var(--text3)">${t.xd}</td>
+        <td><span class="bdg bdg-long">${t.dir}</span></td>
+        <td>$${t.ep}</td><td>$${t.ex}</td>
+        <td class="${cc(t.pnl)}" style="font-weight:bold">${fmt(t.pnl)}</td>
+        <td style="color:var(--text3);font-size:9px">${t.why}</td></tr>`).join('');
+
+    setStatus(`✓ Backtest končan — ${s.trades} poslov`);
+  }catch(e){
+    setStatus('⚠ Backtest napaka: '+e.message,'red');
+    console.error(e);
+  }
+}
+
+// ── RISK ─────────────────────────────────────────
+let portfolio=[
+  {t:'AAPL',dir:'LONG', qty:200,entry:175,cur:185,sec:'Technology',stop:5},
+  {t:'NVDA',dir:'LONG', qty:50, entry:820,cur:875,sec:'Technology',stop:8},
+  {t:'JPM', dir:'LONG', qty:100,entry:190,cur:195,sec:'Financials', stop:5},
+  {t:'XOM', dir:'SHORT',qty:80, entry:118,cur:115,sec:'Energy',     stop:5},
+];
+
+function addPos(){
+  const t=document.getElementById('nTick').value.toUpperCase().trim();
+  if(!t) return;
+  portfolio.push({t,dir:document.getElementById('nDir').value,
+    qty:+document.getElementById('nQty').value||100,
+    entry:+document.getElementById('nEntry').value||100,
+    cur:+document.getElementById('nCur').value||100,
+    sec:document.getElementById('nSec').value,
+    stop:+document.getElementById('nStop').value||5});
+  document.getElementById('nTick').value='';
+  updateRisk();
+}
+function removePos(i){portfolio.splice(i,1);updateRisk();}
+
+async function updateRisk(){
+  let totalExp=0,totalPnL=0;
+  const vols={Technology:.025,Financials:.018,Healthcare:.015,Energy:.022,Consumer:.020,Industrials:.017,Materials:.020,Utilities:.012};
+
+  // Fetch live beta for every unique ticker in parallel
+  const uniqueTickers=[...new Set(portfolio.map(p=>p.t))];
+  const betaResults=await Promise.all(uniqueTickers.map(t=>
+    fetch(`/api/beta/${t}`).then(r=>r.json()).catch(()=>({beta:1.0}))
+  ));
+  const BETA={};
+  uniqueTickers.forEach((t,i)=>{ BETA[t]=betaResults[i].beta||1.0; });
+
+  document.getElementById('portBody').innerHTML=portfolio.map((p,i)=>{
+    const exp=p.qty*p.cur;
+    const pnl=p.dir==='LONG'?(p.cur-p.entry)*p.qty:(p.entry-p.cur)*p.qty;
+    const pnlp=p.dir==='LONG'?(p.cur-p.entry)/p.entry*100:(p.entry-p.cur)/p.entry*100;
+    const stopP=p.dir==='LONG'?p.cur*(1-p.stop/100):p.cur*(1+p.stop/100);
+    const maxL=p.qty*Math.abs(p.cur-stopP);
+    totalExp+=Math.abs(exp); totalPnL+=pnl;
+    return `<tr>
+      <td style="color:var(--cyan)">${p.t}</td>
+      <td><span class="bdg bdg-${p.dir==='LONG'?'long':'short'}">${p.dir}</span></td>
+      <td>${p.qty}</td><td>$${p.entry.toFixed(2)}</td><td>$${p.cur.toFixed(2)}</td>
+      <td style="color:var(--text3)">${p.sec}</td>
+      <td class="${cc(pnl)}">${fmtD(pnl)}</td>
+      <td class="${cc(pnlp)}">${fmt(pnlp)}</td>
+      <td style="color:var(--yellow)">$${stopP.toFixed(2)}</td>
+      <td class="dn">−${fmtD(maxL)}</td>
+      <td><button class="btn r" onclick="removePos(${i})" style="padding:1px 5px;font-size:9px">✕</button></td></tr>`;
+  }).join('');
+
+  let varSq=0,maxLossT=0,betaW=0;
+  portfolio.forEach(p=>{
+    const exp=p.qty*p.cur; const v=vols[p.sec]||.02;
+    varSq+=(exp*v*1.645)**2;
+    maxLossT+=p.qty*Math.abs(p.cur-(p.dir==='LONG'?p.cur*(1-p.stop/100):p.cur*(1+p.stop/100)));
+    betaW+=(Math.abs(exp)/Math.max(totalExp,1))*(BETA[p.t]||1);
+  });
+  const VaR=Math.sqrt(varSq),CVaR=VaR*1.25;
+  const lrgPct=portfolio.length?Math.max(...portfolio.map(p=>p.qty*p.cur/Math.max(totalExp,1)*100)):0;
+  const rL=totalExp>0?VaR/totalExp:0;
+  const rC=rL>.03?C.red:rL>.02?C.yellow:C.green;
+
+  document.getElementById('rVaR').textContent=fmtD(VaR);
+  document.getElementById('rCVaR').textContent=fmtD(CVaR);
+  document.getElementById('rExp').textContent=fmtD(totalExp);
+  document.getElementById('rBeta').textContent=betaW.toFixed(2);
+  document.getElementById('rMaxLoss').textContent=fmtD(maxLossT);
+  document.getElementById('rConc').textContent=lrgPct.toFixed(1)+'%';
+
+  document.getElementById('riskMetBox').innerHTML=`
+    <div style="margin-bottom:10px">
+      <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">RISK LEVEL</div>
+      <div class="gauge-bar" style="height:9px"><div class="gauge-fill" style="width:${Math.min(100,rL*3500)}%;background:${rC}"></div></div>
+      <div style="color:${rC};font-size:11px;font-weight:bold;margin-top:4px">${rL>.03?'⚠ HIGH RISK':rL>.02?'◈ MODERATE':'✓ LOW RISK'}</div>
+    </div><hr class="dv">
+    ${[{k:'TOTAL P&L',v:fmtD(totalPnL),c:cx(totalPnL)},{k:'POSITIONS',v:portfolio.length,c:C.text},
+       {k:'LONG $',v:fmtD(portfolio.filter(p=>p.dir==='LONG').reduce((a,p)=>a+p.qty*p.cur,0)),c:C.green},
+       {k:'SHORT $',v:fmtD(portfolio.filter(p=>p.dir==='SHORT').reduce((a,p)=>a+p.qty*p.cur,0)),c:C.red},
+    ].map(m=>`<div class="risk-metric"><span class="rk">${m.k}</span><span class="rv" style="color:${m.c}">${m.v}</span></div>`).join('')}`;
+
+  // Sector chart
+  const secExp={};
+  portfolio.forEach(p=>{secExp[p.sec]=(secExp[p.sec]||0)+p.qty*p.cur;});
+  dc('sec');
+  if(Object.keys(secExp).length){
+    charts.sec=new Chart(document.getElementById('secChart'),{type:'doughnut',
+      data:{labels:Object.keys(secExp),datasets:[{data:Object.values(secExp),
+        backgroundColor:['#00d4ff','#00e87a','#a07fff','#ff7b2c','#ffc200','#ff3355','#64c8ff','#50fa7b'],
+        borderColor:'#05080f',borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:C.text2,font:{size:9},boxWidth:10,padding:6}},
+          tooltip:{callbacks:{label:c=>` ${c.label}: ${fmtD(c.raw)}`}}}}
+    });
+  }
+
+  // Correlation — real data from /api/correlations
+  const tks = portfolio.map(p=>p.t).slice(0,8);
+  if(tks.length < 2){
+    document.getElementById('corrBox').innerHTML='<div style="color:var(--text3);padding:16px;text-align:center">Dodaj vsaj 2 poziciji</div>';
+  } else {
+    document.getElementById('corrBox').innerHTML='<div class="loader">Računam korelacije</div>';
+    document.getElementById('corrLbl').textContent='NALAGAM…';
+    fetch(`/api/correlations?tickers=${tks.join(',')}`)
+      .then(r=>r.json())
+      .then(d=>renderCorrMatrix(d))
+      .catch(()=>{document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ Napaka pri nalaganju</div>';});
+  }
+}
+
+// ── REAL CORRELATION MATRIX ──────────────────────
+function renderCorrMatrix(d){
+  const lbl = document.getElementById('corrLbl');
+  if(!d || d.error || !d.matrix){
+    document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ '+( d&&d.error||'Napaka')+'</div>';
+    lbl.textContent='NAPAKA'; return;
+  }
+  const tks = d.tickers;
+  lbl.textContent = `PRAVI — ${d.days}D PODATKI`;
+
+  // Color scale: red=high positive, blue=negative, gray=near zero
+  const corrColor = v => {
+    if(v === null) return 'rgba(53,77,104,.2)';
+    if(v >= 0.7)  return `rgba(255,51,85,${0.15 + v*0.55})`;
+    if(v >= 0.4)  return `rgba(255,123,44,${0.2 + v*0.4})`;
+    if(v >= 0.0)  return `rgba(53,77,104,${0.3 + v*0.4})`;
+    if(v >= -0.3) return `rgba(0,212,255,${0.15 + Math.abs(v)*0.5})`;
+    return `rgba(0,232,122,${0.15 + Math.abs(v)*0.6})`;
+  };
+  const corrText = v => {
+    if(v === null) return '—';
+    if(v >= 0.7) return C.red;
+    if(v <= -0.3) return C.green;
+    return C.text;
+  };
+
+  document.getElementById('corrBox').innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="tbl" style="width:auto;min-width:100%">
+        <thead><tr>
+          <th style="color:var(--text3);font-size:8px">90D ρ</th>
+          ${tks.map(t=>`<th style="text-align:center;color:var(--cyan);font-size:9px">${t}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${tks.map(t1=>`<tr>
+            <td style="color:var(--cyan);font-weight:bold;font-size:10px;white-space:nowrap">${t1}</td>
+            ${tks.map(t2=>{
+              const v = d.matrix[t1]?.[t2];
+              const isdiag = t1===t2;
+              return `<td style="text-align:center;background:${isdiag?'rgba(0,212,255,.1)':corrColor(v)};
+                color:${isdiag?C.cyan:corrText(v)};font-size:10px;font-weight:${v!=null&&Math.abs(v)>.6?'bold':'normal'};
+                padding:5px 6px;min-width:38px">
+                ${v!==null?v.toFixed(2):'—'}
+              </td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:9px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap">
+      <span style="color:var(--red)">■ visoka korelacija (>0.7)</span>
+      <span style="color:var(--orange)">■ zmerna (0.4–0.7)</span>
+      <span style="color:var(--text3)">■ nizka (0–0.4)</span>
+      <span style="color:var(--cyan)">■ negativna (<0)</span>
+    </div>`;
+}
+
+// ── NEWS & EARNINGS ──────────────────────────────
+async function loadNewsEarnings(){
+  const ticker = document.getElementById('newsTicker').value.toUpperCase().trim();
+  if(!ticker) return;
+  document.getElementById('newsTickerLbl').textContent = ticker;
+  document.getElementById('newsFeed').innerHTML = '<div class="loader">Nalagam novice za '+ticker+'</div>';
+  document.getElementById('earningsNext').innerHTML = '<div class="loader">Nalagam earnings</div>';
+  setStatus('Nalagam news & earnings za '+ticker+'…','yellow');
+
+  // Load news and earnings in parallel
+  const [newsRes, earnRes] = await Promise.all([
+    fetch(`/api/news/${ticker}`).then(r=>r.json()).catch(()=>({news:[]})),
+    fetch(`/api/earnings/${ticker}`).then(r=>r.json()).catch(()=>({nextDate:null,history:[]}))
+  ]);
+
+  renderNewsFeed(newsRes.news||[]);
+  renderEarnings(earnRes, ticker);
+  renderEpsChart(earnRes.history||[]);
+  setStatus(`✓ News & earnings za ${ticker} naloženi`);
+}
+
+function renderNewsFeed(news){
+  if(!news.length){
+    document.getElementById('newsFeed').innerHTML='<div style="color:var(--text3);padding:16px">Ni novic za ta ticker.</div>';
+    return;
+  }
+  const sentColor = s => s==='BULLISH'?C.green : s==='BEARISH'?C.red : C.text3;
+  const sentBdg   = s => s==='BULLISH'?'bdg-buy' : s==='BEARISH'?'bdg-sell' : 'bdg-neu';
+
+  document.getElementById('newsFeed').innerHTML = news.map(n=>`
+    <div style="padding:9px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">
+        <span class="bdg ${sentBdg(n.sentiment)}">${n.sentiment}</span>
+        <a href="${n.link}" target="_blank" style="color:var(--text);text-decoration:none;font-size:11px;line-height:1.4;flex:1"
+           onmouseover="this.style.color='${C.cyan}'" onmouseout="this.style.color='${C.text}'">${n.title}</a>
+      </div>
+      <div style="display:flex;gap:12px;font-size:9px;color:var(--text3)">
+        <span style="color:var(--text2)">${n.publisher}</span>
+        <span>${n.relTime}</span>
+        ${n.tickers.length?`<span>🔗 ${n.tickers.slice(0,3).join(', ')}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderEarnings(d, ticker){
+  const daysAway = d.nextDate ? Math.round((new Date(d.nextDate)-new Date())/86400000) : null;
+  const urgentColor = daysAway!==null ? (daysAway<=7?C.red : daysAway<=30?C.yellow : C.green) : C.text3;
+
+  document.getElementById('earningsNext').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="sb">
+        <div class="sv" style="color:${urgentColor};font-size:16px">${d.nextDate||'N/A'}</div>
+        <div class="sl">Next Earnings Date</div>
+      </div>
+      <div class="sb">
+        <div class="sv" style="font-size:16px">${daysAway!==null?daysAway+'d':'—'}</div>
+        <div class="sl" style="color:${urgentColor}">Days Away</div>
+      </div>
+      <div class="sb">
+        <div class="sv up" style="font-size:16px">${d.epsEstimate!=null?'$'+d.epsEstimate.toFixed(2):'—'}</div>
+        <div class="sl">EPS Estimate</div>
+      </div>
+      <div class="sb">
+        <div class="sv" style="font-size:16px">${d.revenueEstimate!=null?fmtD(d.revenueEstimate):'—'}</div>
+        <div class="sl">Revenue Estimate</div>
+      </div>
+    </div>
+    ${d.epsLow!=null && d.epsHigh!=null ? `
+    <div style="background:var(--bg3);border:1px solid var(--border);padding:8px;border-radius:2px">
+      <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:6px">EPS RANGE (ANALYST CONSENSUS)</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span class="dn">Low: $${d.epsLow.toFixed(2)}</span>
+        <span style="color:var(--cyan)">Est: $${d.epsEstimate.toFixed(2)}</span>
+        <span class="up">High: $${d.epsHigh.toFixed(2)}</span>
+      </div>
+      <div class="gauge-bar" style="margin-top:6px;height:5px">
+        <div class="gauge-fill" style="width:${Math.min(100,Math.max(0,(d.epsEstimate-d.epsLow)/(d.epsHigh-d.epsLow+.001)*100))}%;background:var(--cyan)"></div>
+      </div>
+    </div>` : ''}`;
+}
+
+function renderEpsChart(history){
+  dc('eps');
+  if(!history.length) return;
+  const labels   = history.map(h=>h.date.slice(0,7));
+  const actual   = history.map(h=>h.epsActual);
+  const estimate = history.map(h=>h.epsEstimate);
+  const surpriseColors = history.map(h=>
+    h.epsActual!=null && h.epsEstimate!=null
+      ? (h.epsActual >= h.epsEstimate ? 'rgba(0,232,122,.7)' : 'rgba(255,51,85,.7)')
+      : 'rgba(53,77,104,.7)');
+
+  charts.eps = new Chart(document.getElementById('epsChart'),{
+    type:'bar',
+    data:{labels, datasets:[
+      {label:'EPS Actual',   data:actual,   backgroundColor:surpriseColors, borderColor:surpriseColors, borderWidth:1},
+      {label:'EPS Estimate', data:estimate, type:'line', borderColor:C.yellow, borderWidth:1.5,
+       borderDash:[4,3], fill:false, pointRadius:4, pointBackgroundColor:C.yellow, tension:.1},
+    ]},
+    options:{...DOPTS,
+      plugins:{...DOPTS.plugins,
+        tooltip:{callbacks:{
+          label: ctx=>{
+            const h=history[ctx.dataIndex];
+            const base=` ${ctx.dataset.label}: $${ctx.raw!=null?ctx.raw.toFixed(2):'N/A'}`;
+            if(ctx.datasetIndex===0 && h.surprise!=null)
+              return base + ` (${h.surprise>0?'+':''}${h.surprise.toFixed(1)}% surprise)`;
+            return base;
+          }
+        }}
+      },
+      scales:{
+        x:{...DOPTS.scales.x},
+        y:{...DOPTS.scales.y, ticks:{...DOPTS.scales.y.ticks, callback:v=>`$${v.toFixed(2)}`}}
+      }
+    }
+  });
+}
+
+async function loadEarningsCalendar(){
+  const panel = document.getElementById('earningsCalPanel');
+  panel.style.display = 'block';
+  document.getElementById('calLoadingLbl').textContent = 'NALAGAM… (može trajati 30s)';
+  document.getElementById('earningsCalBody').innerHTML = '<tr><td colspan="6"><div class="loader">Nalagam earnings calendar za 20 delnic</div></td></tr>';
+  setStatus('Nalagam earnings calendar za celoten universe…','yellow');
+
+  try{
+    const res = await fetch('/api/earnings-calendar');
+    const d   = await res.json();
+    const cal = d.calendar||[];
+    const today = new Date();
+
+    document.getElementById('earningsCalBody').innerHTML = cal.map(s=>{
+      const days = s.nextEarnings ? Math.round((new Date(s.nextEarnings)-today)/86400000) : null;
+      const dc2  = days!=null ? (days<=7?'dn' : days<=30?'flat' : 'up') : '';
+      return `<tr onclick="quickNewsEarnings('${s.t}')" style="cursor:pointer">
+        <td style="color:var(--cyan);font-weight:bold">${s.t}</td>
+        <td style="color:var(--text2)">${s.n}</td>
+        <td style="color:var(--text3)">${s.s}</td>
+        <td>${s.nextEarnings||'—'}</td>
+        <td class="up">${s.epsEstimate!=null?'$'+s.epsEstimate.toFixed(2):'—'}</td>
+        <td class="${dc2}" style="font-weight:bold">${days!=null?days+'d':'—'}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('calLoadingLbl').textContent=`${cal.length} DELNIC`;
+    setStatus(`✓ Earnings calendar naložen — ${cal.length} delnic`);
+  }catch(e){
+    setStatus('⚠ Napaka pri nalaganju calendar','red');
+  }
+}
+
+function quickNewsEarnings(tick){
+  document.getElementById('newsTicker').value=tick;
+  loadNewsEarnings();
+}
+
+// ── NAV ──────────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',['scanner','signals','backtest','risk','news','anomaly'][i]===name);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+name).classList.add('on');
+  if(name==='risk') updateRisk();
+  if(name==='news') loadNewsEarnings();
+  if(name==='anomaly') loadAlertConfig();
+}
+
+// ── ANOMALY SCANNER ────────────────────────────────
+let _anomalyData = null;
+
+async function runAnomalyScan(){
+  const btn = document.getElementById('anomalyScanBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ SKENIRAM…';
+  btn.style.borderColor = 'var(--yellow)';
+  btn.style.color = 'var(--yellow)';
+
+  document.getElementById('anomalyMsg').style.display = 'block';
+  document.getElementById('anomalyMsg').innerHTML =
+    `<div style="color:var(--yellow)">⏳ Prenašam podatke za ~150 delnic z Yahoo Finance…</div>
+     <div style="color:var(--text3);font-size:9px;margin-top:6px">Pridobivam earnings datume, računam korelacije in anomalije…<br>Prosim počakaj ~25-35 sekund</div>`;
+  document.getElementById('anomalyTableWrap').style.display = 'none';
+
+  // Animated dots
+  let dots = 0;
+  const timer = setInterval(()=>{
+    dots = (dots+1)%4;
+    btn.textContent = '⏳ SKENIRAM' + '.'.repeat(dots+1);
+  }, 700);
+
+  try {
+    const r = await fetch('/api/anomaly-scan');
+    const d = await r.json();
+    clearInterval(timer);
+
+    if(d.error){
+      document.getElementById('anomalyMsg').innerHTML =
+        `<div style="color:var(--red)">&#9888; NAPAKA: ${d.error}</div>`;
+      return;
+    }
+
+    _anomalyData = d;
+    document.getElementById('anomalyExportBtn').style.display = 'inline-block';
+
+    // Stats
+    document.getElementById('aStat1').textContent = d.scanned;
+    document.getElementById('aStat1').style.color = 'var(--text)';
+    document.getElementById('aStat2').textContent = d.with_earn;
+    document.getElementById('aStat3').textContent = d.results.length;
+    document.getElementById('aStat3').style.color = d.results.length > 0 ? 'var(--red)' : 'var(--green)';
+    document.getElementById('aStat4').textContent = d.elapsed + 's';
+    document.getElementById('aStat5').textContent = d.ts;
+
+    renderAnomalyTable();
+
+  } catch(e){
+    clearInterval(timer);
+    document.getElementById('anomalyMsg').innerHTML =
+      `<div style="color:var(--red)">&#9888; Napaka pri klicu API: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '&#9658; RUN SCAN';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+  }
+}
+
+function renderAnomalyTable(){
+  if(!_anomalyData) return;
+  const filter = document.getElementById('anomalyFilter').value;
+  const rows = _anomalyData.results.filter(r=> filter==='ALL' || r.signal===filter);
+
+  document.getElementById('anomalyTableTitle').textContent =
+    `REZULTATI — ${rows.length} ANOMALIJ ${filter!=='ALL'?'('+filter+')':''} | ${_anomalyData.candidates} DELNIC Z EARNINGS V 14 DNEH`;
+
+  if(rows.length === 0){
+    document.getElementById('anomalyMsg').style.display = 'block';
+    document.getElementById('anomalyMsg').innerHTML =
+      `<div style="color:var(--text3)">Ni anomalij za filter: <span style="color:var(--cyan)">${filter}</span><br>
+       <span style="font-size:9px">Morda ni delnic z earnings v naslednjih 14 dneh.</span></div>`;
+    document.getElementById('anomalyTableWrap').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('anomalyMsg').style.display = 'none';
+  document.getElementById('anomalyTableWrap').style.display = 'block';
+
+  const signalCfg = {
+    CRITICAL: {c:'var(--red)',   bg:'rgba(255,51,85,.12)',   brd:'rgba(255,51,85,.35)',  lbl:'&#9888; CRITICAL'},
+    HIGH:     {c:'var(--orange)',bg:'rgba(255,123,44,.12)',  brd:'rgba(255,123,44,.35)', lbl:'&#9650; HIGH'},
+    MEDIUM:   {c:'var(--yellow)',bg:'rgba(255,194,0,.10)',   brd:'rgba(255,194,0,.3)',   lbl:'&#9672; MEDIUM'},
+    LOW:      {c:'var(--text2)', bg:'rgba(112,144,176,.08)', brd:'var(--border)',        lbl:'&#9661; LOW'},
+  };
+
+  document.getElementById('anomalyBody').innerHTML = rows.map((r,i)=>{
+    const sg = signalCfg[r.signal] || signalCfg.LOW;
+    const dcC = r.day_chg >= 0 ? 'var(--green)' : 'var(--red)';
+    const dcS = (r.day_chg >= 0 ? '+' : '') + r.day_chg.toFixed(2) + '%';
+    const cdC = r.corr_delta > 0.15 ? 'var(--red)' : r.corr_delta > 0.05 ? 'var(--yellow)' : 'var(--text2)';
+    const vrC = r.vol_ratio > 1.4 ? 'var(--orange)' : r.vol_ratio > 1.2 ? 'var(--yellow)' : 'var(--text2)';
+    const mdC = Math.abs(r.mom_div) > 5 ? 'var(--red)' : Math.abs(r.mom_div) > 2 ? 'var(--yellow)' : 'var(--text2)';
+    const scoreBar = Math.min(100, r.anomaly_score);
+    const daysC = r.days_to_earn <= 3 ? 'var(--red)' : r.days_to_earn <= 7 ? 'var(--yellow)' : 'var(--text2)';
+
+    return `<tr style="${r.signal==='CRITICAL'?'border-left:2px solid var(--red)':r.signal==='HIGH'?'border-left:2px solid var(--orange)':''}">
+      <td style="color:var(--text3)">${i+1}</td>
+      <td>
+        <span style="color:var(--cyan);font-weight:bold;cursor:pointer" onclick="quickStock('${r.ticker}')" title="Odpri signal analizo">${r.ticker}</span>
+        <div style="color:var(--text3);font-size:8px">${r.earn_date}</div>
+      </td>
+      <td style="color:var(--text3);font-size:10px">${r.sector}</td>
+      <td style="color:var(--text)">$${r.price.toFixed(2)}</td>
+      <td style="color:${dcC}">${dcS}</td>
+      <td style="color:${daysC};font-weight:bold">${r.days_to_earn}d</td>
+      <td style="color:var(--text2)">${r.corr_90d.toFixed(3)}</td>
+      <td style="color:${r.corr_15d < r.corr_90d ? 'var(--orange)' : 'var(--text2)'}">${r.corr_15d.toFixed(3)}</td>
+      <td style="color:${cdC};font-weight:bold">${r.corr_delta > 0 ? '+' : ''}${r.corr_delta.toFixed(3)}</td>
+      <td style="color:${vrC}">${r.vol_ratio.toFixed(2)}x</td>
+      <td style="color:${mdC}">${r.mom_div > 0 ? '+' : ''}${r.mom_div.toFixed(2)}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="width:50px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+            <div style="width:${scoreBar}%;height:100%;background:${sg.c};border-radius:3px"></div>
+          </div>
+          <span style="color:${sg.c};font-weight:bold">${r.anomaly_score.toFixed(1)}</span>
+        </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:1px">C:${r.corr_score.toFixed(0)} V:${r.vol_score.toFixed(0)} M:${r.mom_score.toFixed(0)}</div>
+      </td>
+      <td>
+        <span style="display:inline-block;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:bold;
+          background:${sg.bg};color:${sg.c};border:1px solid ${sg.brd}">${sg.lbl}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function quickStock(ticker){
+  document.getElementById('sigTicker').value = ticker;
+  showTab('signals');
+  runSignal();
+}
+
+// ── PDF EXPORT ─────────────────────────────────────────────
+const PDF_CSS = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Courier New',monospace;font-size:11px;color:#111;background:#fff;padding:24px}
+  .pdf-header{border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
+  .pdf-logo{font-size:18px;font-weight:bold;letter-spacing:3px}
+  .pdf-logo small{display:block;font-size:9px;letter-spacing:2px;color:#555;font-weight:normal;margin-top:2px}
+  .pdf-meta{text-align:right;font-size:9px;color:#555;line-height:1.6}
+  .pdf-section{margin-bottom:16px}
+  .pdf-section-title{font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:8px;color:#333}
+  .pdf-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+  .pdf-stat{border:1px solid #ddd;padding:8px;text-align:center;border-radius:2px}
+  .pdf-stat .v{font-size:18px;font-weight:bold}
+  .pdf-stat .l{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:#666;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:9px}
+  th{background:#f0f0f0;padding:5px 6px;text-align:left;font-size:8px;letter-spacing:.8px;text-transform:uppercase;border:1px solid #ddd;font-weight:bold}
+  td{padding:4px 6px;border:1px solid #eee;vertical-align:middle}
+  tr:nth-child(even) td{background:#fafafa}
+  .sig-critical{background:#fff0f0;color:#cc0022;font-weight:bold;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-high{background:#fff4ee;color:#cc5500;font-weight:bold;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-medium{background:#fffbee;color:#997700;font-weight:bold;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-low{background:#f5f5f5;color:#555;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-buy{background:#e6fff0;color:#007733;font-weight:bold;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-sell{background:#fff0f3;color:#cc0022;font-weight:bold;padding:2px 6px;border-radius:2px;font-size:8px}
+  .sig-neutral{background:#f0f0f0;color:#555;padding:2px 6px;border-radius:2px;font-size:8px}
+  .pos{color:#007733}.neg{color:#cc0022}
+  .pdf-footer{margin-top:20px;border-top:1px solid #ddd;padding-top:8px;font-size:8px;color:#999;display:flex;justify-content:space-between}
+  .score-bar-wrap{display:flex;align-items:center;gap:4px}
+  .score-bar{height:4px;border-radius:2px;display:inline-block;background:#333}
+`;
+
+function pdfHeader(title){
+  const now = new Date();
+  const dt = now.toLocaleDateString('sl-SI') + ' ' + now.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+  return '<div class="pdf-header"><div><div class="pdf-logo">AlphaEdge<small>AI-POWERED QUANT RESEARCH</small></div>'
+    + '<div style="font-size:11px;margin-top:6px;color:#333">' + title + '</div></div>'
+    + '<div class="pdf-meta"><div><b>Datum izvoza:</b> ' + dt + '</div>'
+    + '<div><b>Vir podatkov:</b> Yahoo Finance (live)</div>'
+    + '<div style="margin-top:4px;color:#aaa;font-size:8px">NOT FINANCIAL ADVICE - FOR RESEARCH ONLY</div>'
+    + '</div></div>';
+}
+
+function pdfFooter(){
+  return '<div class="pdf-footer"><span>Quant Terminal - Zaupno, samo za interno uporabo</span>'
+    + '<span>Generirano: ' + new Date().toLocaleString('sl-SI') + '</span></div>';
+}
+
+function openPdfWindow(html){
+  const w = window.open('','_blank','width=950,height=750');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quant Terminal Export</title>'
+    + '<style>' + PDF_CSS + '</style></head><body>' + html
+    + '<scr' + 'ipt>setTimeout(function(){window.print();},500);<\/scr' + 'ipt></body></html>');
+  w.document.close();
+}
+
+function exportAnomalyPDF(){
+  if(!_anomalyData || !_anomalyData.results) return;
+  const filter = document.getElementById('anomalyFilter').value;
+  const rows = _anomalyData.results.filter(r=> filter==='ALL' || r.signal===filter);
+  const sigCls = {CRITICAL:'sig-critical',HIGH:'sig-high',MEDIUM:'sig-medium',LOW:'sig-low'};
+
+  const statsHtml = '<div class="pdf-stats">'
+    + '<div class="pdf-stat"><div class="v">' + _anomalyData.scanned + '</div><div class="l">Skeniranih</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + _anomalyData.with_earn + '</div><div class="l">Z earnings datumom</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + _anomalyData.candidates + '</div><div class="l">V 14 dneh</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + rows.length + '</div><div class="l">Anomalij (' + filter + ')</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + _anomalyData.elapsed + 's</div><div class="l">Cas skeniranja</div></div>'
+    + '</div>';
+
+  const tableRows = rows.map(function(r,i){
+    const dc = r.day_chg>=0?'pos':'neg';
+    const md = r.mom_div>=0?'pos':'neg';
+    const cd = r.corr_delta>0.1?'neg':'';
+    const vr = r.vol_ratio>1.3?'neg':'';
+    const bar = Math.round(Math.min(100,r.anomaly_score)*0.5);
+    return '<tr><td>' + (i+1) + '</td><td><b>' + r.ticker + '</b><br><span style="color:#999;font-size:8px">' + r.earn_date + '</span></td>'
+      + '<td>' + r.sector + '</td><td>$' + r.price.toFixed(2) + '</td>'
+      + '<td class="' + dc + '">' + (r.day_chg>=0?'+':'') + r.day_chg.toFixed(2) + '%</td>'
+      + '<td><b>' + r.days_to_earn + 'd</b></td>'
+      + '<td>' + r.corr_90d.toFixed(3) + '</td>'
+      + '<td class="' + (r.corr_15d<r.corr_90d?'neg':'') + '">' + r.corr_15d.toFixed(3) + '</td>'
+      + '<td class="' + cd + '"><b>' + (r.corr_delta>0?'+':'') + r.corr_delta.toFixed(3) + '</b></td>'
+      + '<td class="' + vr + '">' + r.vol_ratio.toFixed(2) + 'x</td>'
+      + '<td class="' + md + '">' + (r.mom_div>=0?'+':'') + r.mom_div.toFixed(2) + '%</td>'
+      + '<td><div class="score-bar-wrap"><div class="score-bar" style="width:' + bar + 'px"></div><b>' + r.anomaly_score.toFixed(1) + '</b></div></td>'
+      + '<td><span class="' + (sigCls[r.signal]||'sig-low') + '">' + r.signal + '</span></td></tr>';
+  }).join('');
+
+  const html = pdfHeader('PRE-EARNINGS ANOMALY SCAN REPORT')
+    + '<div class="pdf-section"><div class="pdf-section-title">Povzetek skeniranja</div>' + statsHtml + '</div>'
+    + '<div class="pdf-section"><div class="pdf-section-title">Anomalije - razvrsceno po score</div>'
+    + '<table><thead><tr><th>#</th><th>Ticker</th><th>Sektor</th><th>Cena</th><th>Dan %</th>'
+    + '<th>Dni</th><th>Corr 90d</th><th>Corr 15d</th><th>Corr Delta</th>'
+    + '<th>Vol Ratio</th><th>Mom Div</th><th>Score</th><th>Signal</th></tr></thead>'
+    + '<tbody>' + tableRows + '</tbody></table></div>'
+    + '<div class="pdf-section" style="font-size:8px;color:#777;line-height:1.7">'
+    + '<div class="pdf-section-title">Metodologija</div>'
+    + 'Korelacijska anomalija (0-40pt): 90d vs 15d korelacija z sektorskim ETF.<br>'
+    + 'Volumska anomalija (0-30pt): 10d volumensko povprecje vs 90d.<br>'
+    + 'Momentum divergenca (0-30pt): 20d return delnice minus sektor ETF.</div>'
+    + pdfFooter();
+
+  openPdfWindow(html);
+}
+
+function exportSignalPDF(){
+  if(!currentStockData) return;
+  const d = currentStockData;
+  const lastSig = d.history && d.history.length ? d.history[d.history.length-1] : null;
+  const sigCls = {BUY:'sig-buy',SELL:'sig-sell',NEUTRAL:'sig-neutral'};
+
+  const metricsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'
+    + '<div class="pdf-stat"><div class="v">$' + d.price.toFixed(2) + '</div><div class="l">Trenutna cena</div></div>'
+    + '<div class="pdf-stat"><div class="v ' + (d.chg>=0?'pos':'neg') + '">' + (d.chg>=0?'+':'') + d.chg.toFixed(2) + '%</div><div class="l">Dnevna sprememba</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + (lastSig?lastSig.rsi:'--') + '</div><div class="l">RSI (14)</div></div>'
+    + '<div class="pdf-stat"><div class="v">' + (lastSig?(lastSig.mom>=0?'+':'')+lastSig.mom.toFixed(1)+'%':'--') + '</div><div class="l">Momentum 20d</div></div>'
+    + '</div>';
+
+  const lastRows = (d.history||[]).slice(-20).reverse().map(function(h){
+    const pc = h.mom>=0?'pos':'neg';
+    return '<tr><td>' + h.date + '</td><td>$' + h.price.toFixed(2) + '</td><td>' + h.rsi + '</td>'
+      + '<td class="' + pc + '">' + (h.mom>=0?'+':'') + h.mom.toFixed(2) + '%</td>'
+      + '<td><span class="' + (sigCls[h.sig]||'sig-neutral') + '">' + h.sig + '</span></td></tr>';
+  }).join('');
+
+  const sigLine = lastSig ? '<div style="margin-top:8px;padding:10px;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;gap:12px">'
+    + '<span style="font-size:13px;font-weight:bold">Aktivni signal:</span>'
+    + '<span class="' + (sigCls[lastSig.sig]||'sig-neutral') + '" style="font-size:13px;padding:4px 12px">' + lastSig.sig + '</span>'
+    + '<span style="color:#777;font-size:10px">' + lastSig.date + '</span></div>' : '';
+
+  const html = pdfHeader('SIGNAL ANALYSIS -- ' + (d.ticker||''))
+    + '<div class="pdf-section"><div class="pdf-section-title">Trenutni kazalniki</div>' + metricsHtml + sigLine + '</div>'
+    + '<div class="pdf-section"><div class="pdf-section-title">Zgodovina signalov - zadnjih 20 dni</div>'
+    + '<table><thead><tr><th>Datum</th><th>Cena</th><th>RSI</th><th>Momentum</th><th>Signal</th></tr></thead>'
+    + '<tbody>' + lastRows + '</tbody></table></div>'
+    + '<div class="pdf-section" style="font-size:8px;color:#777;line-height:1.7">'
+    + '<div class="pdf-section-title">Metodologija</div>'
+    + 'RSI (14): manj kot 30 = oversold (BUY), vec kot 70 = overbought (SELL).<br>'
+    + 'Momentum: 20-dnevni return. Vec kot +6% = BUY, manj kot -6% = SELL.</div>'
+    + pdfFooter();
+
+  openPdfWindow(html);
+}
+
+
+// ── ALERT CONFIG ──────────────────────────────────────────
+async function loadAlertConfig(){
+  const r = await fetch('/api/alerts/config').then(r=>r.json()).catch(()=>({}));
+  if(r.smtp_host) document.getElementById('alertSmtpHost').value = r.smtp_host;
+  if(r.smtp_port) document.getElementById('alertSmtpPort').value = r.smtp_port;
+  if(r.smtp_user) document.getElementById('alertSmtpUser').value = r.smtp_user;
+  if(r.recipients) document.getElementById('alertRecipients').value = r.recipients;
+  if(r.send_time) document.getElementById('alertSendTime').value = r.send_time;
+  if(r.min_signal) document.getElementById('alertMinSignal').value = r.min_signal;
+  document.getElementById('alertEnabled').checked = !!r.enabled;
+}
+
+async function saveAlertConfig(){
+  const msg = document.getElementById('alertMsg');
+  const data = {
+    enabled: document.getElementById('alertEnabled').checked,
+    smtp_host: document.getElementById('alertSmtpHost').value,
+    smtp_port: document.getElementById('alertSmtpPort').value,
+    smtp_user: document.getElementById('alertSmtpUser').value,
+    smtp_pass: document.getElementById('alertSmtpPass').value,
+    recipients: document.getElementById('alertRecipients').value,
+    send_time: document.getElementById('alertSendTime').value,
+    min_signal: document.getElementById('alertMinSignal').value,
+  };
+  const r = await fetch('/api/alerts/config',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)}).then(r=>r.json()).catch(e=>({error:e.message}));
+  if(r.ok){ msg.style.color='var(--green)'; msg.textContent='Shranjeno!'; setTimeout(()=>msg.textContent='',2000); }
+  else{ msg.style.color='var(--red)'; msg.textContent=r.error||'Napaka'; }
+}
+
+async function testAlertEmail(){
+  const msg = document.getElementById('alertMsg');
+  msg.style.color='var(--yellow)'; msg.textContent='Posiljam test email...';
+  const data = {
+    smtp_host: document.getElementById('alertSmtpHost').value,
+    smtp_port: document.getElementById('alertSmtpPort').value,
+    smtp_user: document.getElementById('alertSmtpUser').value,
+    smtp_pass: document.getElementById('alertSmtpPass').value,
+    recipients: document.getElementById('alertRecipients').value,
+    min_signal: document.getElementById('alertMinSignal').value,
+  };
+  const r = await fetch('/api/alerts/test',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)}).then(r=>r.json()).catch(e=>({error:e.message}));
+  msg.style.color = r.ok ? 'var(--green)' : 'var(--red)';
+  msg.textContent = r.msg || r.error || 'Napaka';
+}
+
+async function runAlertNow(){
+  const msg = document.getElementById('alertMsg');
+  msg.style.color='var(--yellow)'; msg.textContent='Posiljam...';
+  const r = await fetch('/api/alerts/run-now',{method:'POST'}).then(r=>r.json()).catch(e=>({error:e.message}));
+  msg.style.color = r.ok ? 'var(--green)' : 'var(--red)';
+  msg.textContent = r.msg || r.error || 'Napaka';
+}
+
+// ── CHANGE PASSWORD MODAL (vsi userji) ────────────────────
+function showChangePwModal(){
+  document.getElementById('changePwModal').style.display='flex';
+  document.getElementById('cpOldPw').value='';
+  document.getElementById('cpNewPw').value='';
+  document.getElementById('cpNewPw2').value='';
+  document.getElementById('cpMsg').textContent='';
+  setTimeout(function(){document.getElementById('cpOldPw').focus();},100);
+}
+function hideChangePwModal(){
+  document.getElementById('changePwModal').style.display='none';
+}
+document.addEventListener('click', function(e){
+  if(e.target===document.getElementById('changePwModal')) hideChangePwModal();
+  if(e.target===document.getElementById('adminModal')) hideAdminPanel();
+});
+async function submitChangePw(){
+  const old_password = document.getElementById('cpOldPw').value;
+  const new_password = document.getElementById('cpNewPw').value;
+  const new_password2 = document.getElementById('cpNewPw2').value;
+  const msg = document.getElementById('cpMsg');
+  if(!old_password || !new_password){msg.style.color='var(--red)';msg.textContent='Izpolni vsa polja';return;}
+  if(new_password !== new_password2){msg.style.color='var(--red)';msg.textContent='Novi gesli se ne ujemata';return;}
+  if(new_password.length < 6){msg.style.color='var(--red)';msg.textContent='Geslo mora biti vsaj 6 znakov';return;}
+  const r = await fetch('/admin/change-password',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({old_password,new_password})}).then(r=>r.json()).catch(e=>({error:e.message}));
+  if(r.ok){msg.style.color='var(--green)';msg.textContent='Geslo uspešno spremenjeno!';}
+  else{msg.style.color='var(--red)';msg.textContent=r.error||'Napaka pri spremembi gesla';}
+}
+
+// ── ADMIN PANEL ───────────────────────────────────────────
+async function showAdminPanel(){
+  document.getElementById('adminModal').style.display='flex';
+  await loadAdminUsers();
+}
+function hideAdminPanel(){document.getElementById('adminModal').style.display='none';}
+async function loadAdminUsers(){
+  const list=document.getElementById('adminUserList');
+  list.innerHTML='<div style="color:var(--text3)">Nalagam...</div>';
+  const r=await fetch('/admin/users').then(r=>r.json()).catch(()=>({users:[]}));
+  if(!r.users||!r.users.length){list.innerHTML='<div style="color:var(--text3)">Ni uporabnikov</div>';return;}
+  list.innerHTML=r.users.map(u=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <span style="color:var(--cyan);font-weight:700">${u.username}</span>
+        <span style="color:var(--text3);margin-left:8px;font-size:10px">${u.role||'user'}</span>
+        ${u.email?`<span style="color:var(--text3);margin-left:8px;font-size:10px">${u.email}</span>`:''}
+      </div>
+      <button onclick="deleteUser(${u.id},'${u.username}')" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:3px 8px;font-family:var(--mono);font-size:9px;cursor:pointer;border-radius:2px;">BRIŠI</button>
+    </div>`).join('');
+}
+async function deleteUser(id,name){
+  if(!confirm('Brišeš uporabnika '+name+'?'))return;
+  const r=await fetch('/admin/users/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json());
+  if(r.ok)await loadAdminUsers();
+  else alert(r.error);
+}
+async function addAdminUser(){
+  const u=document.getElementById('newUsername').value.trim();
+  const p=document.getElementById('newPassword').value;
+  const e=document.getElementById('newEmail').value.trim();
+  const msg=document.getElementById('adminMsg');
+  if(!u||!p){msg.style.color='var(--red)';msg.textContent='Manjka username ali geslo';return;}
+  const r=await fetch('/admin/users/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,email:e})}).then(r=>r.json());
+  if(r.ok){msg.style.color='var(--green)';msg.textContent='Uporabnik '+r.username+' dodan!';
+    document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';document.getElementById('newEmail').value='';
+    await loadAdminUsers();}
+  else{msg.style.color='var(--red)';msg.textContent=r.error||'Napaka';}
+}
+
+
+// -- CLOCK --
+function startClock(){
+  function tick(){
+    var now=new Date();
+    var h=String(now.getHours()).padStart(2,'0');
+    var m=String(now.getMinutes()).padStart(2,'0');
+    var s=String(now.getSeconds()).padStart(2,'0');
+    var el=document.getElementById('clk');
+    if(el) el.textContent=h+':'+m+':'+s;
+  }
+  tick();
+  setInterval(tick,1000);
+}
+
+// -- MARKET TICKER --
+function startMarketTicker(){
+  function setVal(valId,chgId,data,prefix){
+    if(!data) return;
+    var v=document.getElementById(valId);
+    var c=document.getElementById(chgId);
+    if(v) v.textContent=(prefix||'')+data.price.toFixed(2);
+    if(c){
+      c.textContent=(data.chg>=0?'+':'')+data.chg.toFixed(2)+'%';
+      c.className='chg '+(data.chg>=0?'up':'dn');
+    }
+  }
+  function refresh(){
+    fetch('/api/header-prices').then(function(r){return r.json();}).then(function(d){
+      setVal('hSP','hSPc',d.sp500,'');
+      setVal('hNQ','hNQc',d.nasdaq,'$');
+      setVal('hVIX','hVIXc',d.vix,'');
+      setVal('hSPY','hSPYc',d.spy,'$');
+    }).catch(function(){});
+  }
+  refresh();
+  setInterval(refresh,60000);
+}
+
+// -- BOOT --
+showTab('scanner');
+loadMovers();
+loadSectors();
+loadVolumeAnomaly();
+startClock();
+startMarketTicker();
+</script>
+</body>
+</html>
