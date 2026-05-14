@@ -420,20 +420,23 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 <!-- ══ RISK ══ -->
 <div id="pg-risk" class="page">
   <div class="pnl" style="margin-bottom:10px">
-    <div class="pnl-hdr"><span class="pnl-title">⚡ PORTFOLIO BUILDER</span></div>
+    <div class="pnl-hdr">
+      <span class="pnl-title">⚡ PORTFOLIO TRACKER</span>
+      <span id="portStatus" style="color:var(--text3);font-size:9px;margin-left:10px"></span>
+      <button class="btn" onclick="loadPortfolio()" style="margin-left:auto;padding:2px 8px;font-size:9px">↻ REFRESH</button>
+    </div>
     <div class="pnl-body">
-      <div class="scrl" style="max-height:190px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&L $</th><th>P&L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"></tbody></table></div>
+      <div class="scrl" style="max-height:200px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&amp;L $</th><th>P&amp;L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Nalagam pozicije…</td></tr></tbody></table></div>
       <hr class="dv">
       <div class="inp-row" style="margin-bottom:0">
         <div class="inp-grp"><label>Ticker</label><input type="text" class="fi" id="nTick" placeholder="AAPL" style="width:75px;text-transform:uppercase"></div>
         <div class="inp-grp"><label>Direction</label><select class="fi" id="nDir"><option>LONG</option><option>SHORT</option></select></div>
         <div class="inp-grp"><label>Qty</label><input type="number" class="fi" id="nQty" value="100" style="width:70px"></div>
         <div class="inp-grp"><label>Entry $</label><input type="number" class="fi" id="nEntry" placeholder="150" style="width:85px"></div>
-        <div class="inp-grp"><label>Current $</label><input type="number" class="fi" id="nCur" placeholder="155" style="width:85px"></div>
-        <div class="inp-grp"><label>Sector</label><select class="fi" id="nSec"><option>Technology</option><option>Healthcare</option><option>Financials</option><option>Energy</option><option>Consumer</option><option>Industrials</option><option>Materials</option><option>Utilities</option></select></div>
         <div class="inp-grp"><label>Stop %</label><input type="number" class="fi" id="nStop" value="5" style="width:65px"></div>
-        <button class="btn g" onclick="addPos()">+ ADD</button>
+        <button class="btn g" id="addBtn" onclick="addPos()">+ ADD</button>
       </div>
+      <div id="addMsg" style="font-size:9px;margin-top:6px;color:var(--text3)"></div>
     </div>
   </div>
   <div class="grid g3" style="margin-bottom:10px">
@@ -1088,68 +1091,103 @@ async function runBacktest(){
   }
 }
 
-// ── RISK ─────────────────────────────────────────
-let portfolio=[
-  {t:'AAPL',dir:'LONG', qty:200,entry:175,cur:185,sec:'Technology',stop:5},
-  {t:'NVDA',dir:'LONG', qty:50, entry:820,cur:875,sec:'Technology',stop:8},
-  {t:'JPM', dir:'LONG', qty:100,entry:190,cur:195,sec:'Financials', stop:5},
-  {t:'XOM', dir:'SHORT',qty:80, entry:118,cur:115,sec:'Energy',     stop:5},
-];
-
-function addPos(){
-  const t=document.getElementById('nTick').value.toUpperCase().trim();
-  if(!t) return;
-  portfolio.push({t,dir:document.getElementById('nDir').value,
-    qty:+document.getElementById('nQty').value||100,
-    entry:+document.getElementById('nEntry').value||100,
-    cur:+document.getElementById('nCur').value||100,
-    sec:document.getElementById('nSec').value,
-    stop:+document.getElementById('nStop').value||5});
-  document.getElementById('nTick').value='';
-  updateRisk();
+// ── RISK / PORTFOLIO TRACKER ─────────────────────
+async function addPos(){
+  const ticker = document.getElementById('nTick').value.toUpperCase().trim();
+  if(!ticker){ alert('Vnesi ticker'); return; }
+  const entry = parseFloat(document.getElementById('nEntry').value);
+  if(!entry || entry <= 0){ alert('Vnesi nakupno ceno'); return; }
+  const btn = document.getElementById('addBtn');
+  const msg = document.getElementById('addMsg');
+  btn.disabled = true; btn.textContent = '...';
+  msg.textContent = 'Dodajam ' + ticker + ' in pridobivam live ceno…';
+  try {
+    const res = await fetch('/api/portfolio/add', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        ticker, direction: document.getElementById('nDir').value,
+        qty: parseFloat(document.getElementById('nQty').value)||100,
+        entry_price: entry,
+        stop_pct: parseFloat(document.getElementById('nStop').value)||5
+      })
+    });
+    const d = await res.json();
+    if(d.ok){
+      document.getElementById('nTick').value='';
+      document.getElementById('nEntry').value='';
+      msg.style.color='var(--green)'; msg.textContent='✓ Dodano!';
+      setTimeout(()=>{ msg.textContent=''; msg.style.color='var(--text3)'; }, 2000);
+      loadPortfolio();
+    } else {
+      msg.style.color='var(--red)'; msg.textContent='⚠ ' + (d.error||'Napaka');
+    }
+  } catch(e){
+    msg.style.color='var(--red)'; msg.textContent='⚠ Napaka pri dodajanju';
+  }
+  btn.disabled=false; btn.textContent='+ ADD';
 }
-function removePos(i){portfolio.splice(i,1);updateRisk();}
 
-async function updateRisk(){
-  let totalExp=0,totalPnL=0;
-  const vols={Technology:.025,Financials:.018,Healthcare:.015,Energy:.022,Consumer:.020,Industrials:.017,Materials:.020,Utilities:.012};
+async function removePos(pid){
+  await fetch('/api/portfolio/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:pid})});
+  loadPortfolio();
+}
 
-  // Fetch live beta for every unique ticker in parallel
-  const uniqueTickers=[...new Set(portfolio.map(p=>p.t))];
-  const betaResults=await Promise.all(uniqueTickers.map(t=>
-    fetch(`/api/beta/${t}`).then(r=>r.json()).catch(()=>({beta:1.0}))
-  ));
+async function loadPortfolio(){
+  document.getElementById('portStatus').textContent = 'Nalagam live cene…';
+  try {
+    const res = await fetch('/api/portfolio');
+    const d = await res.json();
+    renderPortfolio(d.positions || []);
+    document.getElementById('portStatus').textContent = 'Posodobljeno ' + new Date().toLocaleTimeString('sl-SI');
+  } catch(e){
+    document.getElementById('portStatus').textContent = '⚠ Napaka';
+    document.getElementById('portBody').innerHTML = '<tr><td colspan="11" style="color:var(--red);text-align:center;padding:16px">Napaka pri nalaganju</td></tr>';
+  }
+}
+
+function renderPortfolio(positions){
+  if(!positions.length){
+    document.getElementById('portBody').innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Ni pozicij. Dodaj svojo prvo pozicijo spodaj.</td></tr>';
+    renderRiskMetrics([]);
+    return;
+  }
+  document.getElementById('portBody').innerHTML = positions.map(p=>`
+    <tr>
+      <td style="color:var(--cyan)">${p.ticker}</td>
+      <td><span class="bdg ${p.direction==='LONG'?'bdg-long':'bdg-short'}">${p.direction}</span></td>
+      <td>${p.qty}</td>
+      <td>$${p.entry.toFixed(2)}</td>
+      <td style="color:var(--text)">$${p.cur.toFixed(2)}</td>
+      <td style="color:var(--text3)">${p.sector}</td>
+      <td class="${p.pnl>=0?'up':'dn'}">${p.pnl>=0?'+':''}$${p.pnl.toFixed(2)}</td>
+      <td class="${p.pnl_pct>=0?'up':'dn'}">${p.pnl_pct>=0?'+':''}${p.pnl_pct.toFixed(2)}%</td>
+      <td style="color:var(--yellow)">$${p.stop_price.toFixed(2)}</td>
+      <td class="dn">−$${p.max_loss.toFixed(2)}</td>
+      <td><button class="btn r" onclick="removePos(${p.id})" style="padding:1px 5px;font-size:9px">✕</button></td>
+    </tr>`).join('');
+  renderRiskMetrics(positions);
+}
+
+async function renderRiskMetrics(positions){
+  let totalExp=0, totalPnL=0;
+  positions.forEach(p=>{ totalExp+=p.exposure; totalPnL+=p.pnl; });
+
+  // Fetch live betas
+  const tickers=[...new Set(positions.map(p=>p.ticker))];
+  const betaRes = await Promise.all(tickers.map(t=>fetch(`/api/beta/${t}`).then(r=>r.json()).catch(()=>({beta:1.0}))));
   const BETA={};
-  uniqueTickers.forEach((t,i)=>{ BETA[t]=betaResults[i].beta||1.0; });
+  tickers.forEach((t,i)=>{ BETA[t]=betaRes[i].beta||1.0; });
 
-  document.getElementById('portBody').innerHTML=portfolio.map((p,i)=>{
-    const exp=p.qty*p.cur;
-    const pnl=p.dir==='LONG'?(p.cur-p.entry)*p.qty:(p.entry-p.cur)*p.qty;
-    const pnlp=p.dir==='LONG'?(p.cur-p.entry)/p.entry*100:(p.entry-p.cur)/p.entry*100;
-    const stopP=p.dir==='LONG'?p.cur*(1-p.stop/100):p.cur*(1+p.stop/100);
-    const maxL=p.qty*Math.abs(p.cur-stopP);
-    totalExp+=Math.abs(exp); totalPnL+=pnl;
-    return `<tr>
-      <td style="color:var(--cyan)">${p.t}</td>
-      <td><span class="bdg bdg-${p.dir==='LONG'?'long':'short'}">${p.dir}</span></td>
-      <td>${p.qty}</td><td>$${p.entry.toFixed(2)}</td><td>$${p.cur.toFixed(2)}</td>
-      <td style="color:var(--text3)">${p.sec}</td>
-      <td class="${cc(pnl)}">${fmtD(pnl)}</td>
-      <td class="${cc(pnlp)}">${fmt(pnlp)}</td>
-      <td style="color:var(--yellow)">$${stopP.toFixed(2)}</td>
-      <td class="dn">−${fmtD(maxL)}</td>
-      <td><button class="btn r" onclick="removePos(${i})" style="padding:1px 5px;font-size:9px">✕</button></td></tr>`;
-  }).join('');
-
-  let varSq=0,maxLossT=0,betaW=0;
-  portfolio.forEach(p=>{
-    const exp=p.qty*p.cur; const v=vols[p.sec]||.02;
-    varSq+=(exp*v*1.645)**2;
-    maxLossT+=p.qty*Math.abs(p.cur-(p.dir==='LONG'?p.cur*(1-p.stop/100):p.cur*(1+p.stop/100)));
-    betaW+=(Math.abs(exp)/Math.max(totalExp,1))*(BETA[p.t]||1);
+  const vols={Technology:.025,Financials:.018,Healthcare:.015,Energy:.022,Consumer:.020,Industrials:.017,Materials:.020,Utilities:.012,Unknown:.020};
+  let varSq=0, maxLossT=0, betaW=0;
+  positions.forEach(p=>{
+    const v=vols[p.sector]||.020;
+    varSq+=(p.exposure*v*1.645)**2;
+    maxLossT+=p.max_loss;
+    betaW+=(p.exposure/Math.max(totalExp,1))*(BETA[p.ticker]||1);
   });
-  const VaR=Math.sqrt(varSq),CVaR=VaR*1.25;
-  const lrgPct=portfolio.length?Math.max(...portfolio.map(p=>p.qty*p.cur/Math.max(totalExp,1)*100)):0;
+  const VaR=Math.sqrt(varSq), CVaR=VaR*1.25;
+  const lrgPct=positions.length?Math.max(...positions.map(p=>p.exposure/Math.max(totalExp,1)*100)):0;
   const rL=totalExp>0?VaR/totalExp:0;
   const rC=rL>.03?C.red:rL>.02?C.yellow:C.green;
 
@@ -1166,14 +1204,15 @@ async function updateRisk(){
       <div class="gauge-bar" style="height:9px"><div class="gauge-fill" style="width:${Math.min(100,rL*3500)}%;background:${rC}"></div></div>
       <div style="color:${rC};font-size:11px;font-weight:bold;margin-top:4px">${rL>.03?'⚠ HIGH RISK':rL>.02?'◈ MODERATE':'✓ LOW RISK'}</div>
     </div><hr class="dv">
-    ${[{k:'TOTAL P&L',v:fmtD(totalPnL),c:cx(totalPnL)},{k:'POSITIONS',v:portfolio.length,c:C.text},
-       {k:'LONG $',v:fmtD(portfolio.filter(p=>p.dir==='LONG').reduce((a,p)=>a+p.qty*p.cur,0)),c:C.green},
-       {k:'SHORT $',v:fmtD(portfolio.filter(p=>p.dir==='SHORT').reduce((a,p)=>a+p.qty*p.cur,0)),c:C.red},
+    ${[{k:'SKUPNI P&L',v:(totalPnL>=0?'+':'')+fmtD(totalPnL),c:cx(totalPnL)},
+       {k:'POZICIJE',v:positions.length,c:C.text},
+       {k:'LONG $',v:fmtD(positions.filter(p=>p.direction==='LONG').reduce((a,p)=>a+p.exposure,0)),c:C.green},
+       {k:'SHORT $',v:fmtD(positions.filter(p=>p.direction==='SHORT').reduce((a,p)=>a+p.exposure,0)),c:C.red},
     ].map(m=>`<div class="risk-metric"><span class="rk">${m.k}</span><span class="rv" style="color:${m.c}">${m.v}</span></div>`).join('')}`;
 
-  // Sector chart
+  // Sector doughnut
   const secExp={};
-  portfolio.forEach(p=>{secExp[p.sec]=(secExp[p.sec]||0)+p.qty*p.cur;});
+  positions.forEach(p=>{ secExp[p.sector]=(secExp[p.sector]||0)+p.exposure; });
   dc('sec');
   if(Object.keys(secExp).length){
     charts.sec=new Chart(document.getElementById('secChart'),{type:'doughnut',
@@ -1186,8 +1225,8 @@ async function updateRisk(){
     });
   }
 
-  // Correlation — real data from /api/correlations
-  const tks = portfolio.map(p=>p.t).slice(0,8);
+  // Correlation matrix
+  const tks = positions.map(p=>p.ticker).slice(0,8);
   if(tks.length < 2){
     document.getElementById('corrBox').innerHTML='<div style="color:var(--text3);padding:16px;text-align:center">Dodaj vsaj 2 poziciji</div>';
   } else {
@@ -1196,7 +1235,7 @@ async function updateRisk(){
     fetch(`/api/correlations?tickers=${tks.join(',')}`)
       .then(r=>r.json())
       .then(d=>renderCorrMatrix(d))
-      .catch(()=>{document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ Napaka pri nalaganju</div>';});
+      .catch(()=>{ document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ Napaka</div>'; });
   }
 }
 
@@ -1420,7 +1459,7 @@ function showTab(name){
   });
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('pg-'+name).classList.add('on');
-  if(name==='risk') updateRisk();
+  if(name==='risk') loadPortfolio();
   if(name==='news') loadNewsEarnings();
   if(name==='anomaly') loadAlertConfig();
   if(name==='watchlist') loadWatchlist();

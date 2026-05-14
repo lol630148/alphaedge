@@ -62,6 +62,17 @@ def init_db():
         added_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, ticker)
     )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS portfolio (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     INTEGER NOT NULL,
+        ticker      TEXT NOT NULL,
+        direction   TEXT NOT NULL DEFAULT 'LONG',
+        qty         REAL NOT NULL,
+        entry_price REAL NOT NULL,
+        stop_pct    REAL NOT NULL DEFAULT 5.0,
+        sector      TEXT DEFAULT 'Unknown',
+        added_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
 
     # Create default admin on first run
     c.execute('SELECT COUNT(*) FROM users')
@@ -1286,6 +1297,79 @@ def api_watchlist_scan():
     results.sort(key=lambda x: tickers.index(x['ticker']) if x['ticker'] in tickers else 999)
     return jsonify({'results': results})
 
+
+
+# ── PORTFOLIO ─────────────────────────────────────────────────
+@app.route('/api/portfolio', methods=['GET'])
+@login_required
+def api_portfolio_get():
+    """Get all positions for current user with live prices."""
+    user_id = session['user_id']
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        'SELECT id, ticker, direction, qty, entry_price, stop_pct, sector FROM portfolio WHERE user_id=? ORDER BY added_at',
+        (user_id,)
+    ).fetchall()
+    conn.close()
+
+    positions = []
+    for row in rows:
+        pid, ticker, direction, qty, entry_price, stop_pct, sector = row
+        try:
+            hist = yf.Ticker(ticker).history(period='2d', auto_adjust=True)
+            if len(hist) >= 1:
+                cur = float(hist['Close'].iloc[-1])
+            else:
+                cur = entry_price
+        except Exception:
+            cur = entry_price
+        pnl = (cur - entry_price) * qty if direction == 'LONG' else (entry_price - cur) * qty
+        pnl_pct = (cur - entry_price) / entry_price * 100 if direction == 'LONG' else (entry_price - cur) / entry_price * 100
+        stop_price = cur * (1 - stop_pct / 100) if direction == 'LONG' else cur * (1 + stop_pct / 100)
+        max_loss = qty * abs(cur - stop_price)
+        positions.append({
+            'id': pid, 'ticker': ticker, 'direction': direction,
+            'qty': qty, 'entry': round(entry_price, 2), 'cur': round(cur, 2),
+            'sector': sector, 'stop_pct': stop_pct,
+            'stop_price': round(stop_price, 2),
+            'pnl': round(pnl, 2), 'pnl_pct': round(pnl_pct, 2),
+            'max_loss': round(max_loss, 2),
+            'exposure': round(qty * cur, 2)
+        })
+    return jsonify({'positions': positions})
+
+@app.route('/api/portfolio/add', methods=['POST'])
+@login_required
+def api_portfolio_add():
+    user_id = session['user_id']
+    d = request.get_json() or {}
+    ticker = d.get('ticker', '').upper().strip()
+    if not ticker:
+        return jsonify({'error': 'Ticker required'}), 400
+    # Auto-detect sector from UNI_MAP
+    sector = UNI_MAP.get(ticker, {}).get('s', d.get('sector', 'Unknown'))
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        'INSERT INTO portfolio (user_id, ticker, direction, qty, entry_price, stop_pct, sector) VALUES (?,?,?,?,?,?,?)',
+        (user_id, ticker, d.get('direction', 'LONG'), float(d.get('qty', 100)),
+         float(d.get('entry_price', 0)), float(d.get('stop_pct', 5)), sector)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/portfolio/remove', methods=['POST'])
+@login_required
+def api_portfolio_remove():
+    user_id = session['user_id']
+    pid = (request.get_json() or {}).get('id')
+    if not pid:
+        return jsonify({'error': 'ID required'}), 400
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('DELETE FROM portfolio WHERE id=? AND user_id=?', (pid, user_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
 
 # ── ANOMALY ACCURACY BACKTEST ─────────────────────────────────
 @app.route('/api/anomaly-accuracy')
