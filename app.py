@@ -314,17 +314,85 @@ def calc_rsi(closes, period=14):
     if al == 0: return 100.0
     return round(100 - 100 / (1 + ag/al), 1)
 
+def detect_pead(hist_df):
+    """Detect Post-Earnings Announcement Drift from volume+price spikes in last 45 days."""
+    try:
+        closes = hist_df['Close'].values.astype(float)
+        volumes = hist_df['Volume'].values.astype(float)
+        if len(closes) < 30:
+            return None
+        # Look at last 45 trading days for an earnings-like event
+        window = min(45, len(closes) - 5)
+        avg_vol = float(np.mean(volumes[-90:-window])) if len(volumes) > 90 + window else float(np.mean(volumes[:-window]))
+        if avg_vol <= 0:
+            return None
+        best = None
+        for i in range(len(closes) - window, len(closes) - 1):
+            if i < 1:
+                continue
+            vol_ratio = volumes[i] / avg_vol if avg_vol > 0 else 0
+            gap = (closes[i] - closes[i-1]) / closes[i-1] * 100
+            if vol_ratio > 2.0 and abs(gap) > 2.5:
+                # Check if price continued drifting after event
+                drift = (closes[-1] - closes[i]) / closes[i] * 100
+                consistent = (gap > 0 and drift > 0) or (gap < 0 and drift < 0)
+                if consistent and (best is None or abs(gap) > abs(best['gap'])):
+                    best = {'gap': gap, 'drift': drift, 'vol_ratio': vol_ratio,
+                            'direction': 'LONG' if gap > 0 else 'SHORT'}
+        return best
+    except Exception:
+        return None
+
 def compute_signals(hist_df):
-    closes = hist_df['Close'].values.astype(float)
-    dates  = hist_df.index.strftime('%Y-%m-%d').tolist()
+    closes  = hist_df['Close'].values.astype(float)
+    dates   = hist_df.index.strftime('%Y-%m-%d').tolist()
+    volumes = hist_df['Volume'].values.astype(float) if 'Volume' in hist_df.columns else None
+
+    # PEAD detection (once per call, last signal gets the tag)
+    pead = detect_pead(hist_df)
+
     out = []
     for i in range(20, len(closes)):
         mom = (closes[i] - closes[i-20]) / closes[i-20] * 100
         rsi = calc_rsi(closes[:i+1])
-        sig = ('BUY'     if rsi < 30 or mom >  6 else
-               'SELL'    if rsi > 70 or mom < -6 else 'NEUTRAL')
-        out.append({'date':dates[i], 'price':round(closes[i],2),
-                    'rsi':rsi, 'mom':round(float(mom),2), 'sig':sig})
+
+        # Volume spike bonus (last bar)
+        vol_bonus = 0
+        if volumes is not None and i > 0 and i >= 20:
+            avg_v = float(np.mean(volumes[i-20:i]))
+            if avg_v > 0:
+                vr = volumes[i] / avg_v
+                if vr > 1.5:
+                    vol_bonus = 5 if mom > 0 else -5
+
+        score = (
+            (30 - rsi if rsi < 30 else 0) +
+            (rsi - 70 if rsi > 70 else 0) * -1 +
+            (mom * 0.8) +
+            vol_bonus
+        )
+
+        if rsi < 30 or (mom > 6 and score > 0):
+            sig = 'BUY'
+        elif rsi > 70 or (mom < -6 and score < 0):
+            sig = 'SELL'
+        else:
+            sig = 'NEUTRAL'
+
+        entry = {'date':dates[i], 'price':round(closes[i],2),
+                 'rsi':rsi, 'mom':round(float(mom),2), 'sig':sig}
+
+        # Tag last bar with PEAD if detected
+        if i == len(closes) - 1 and pead:
+            entry['pead'] = pead
+            if pead['direction'] == 'LONG' and sig != 'SELL':
+                entry['sig'] = 'BUY'
+                entry['pead_tag'] = 'PEAD ↑'
+            elif pead['direction'] == 'SHORT' and sig != 'BUY':
+                entry['sig'] = 'SELL'
+                entry['pead_tag'] = 'PEAD ↓'
+
+        out.append(entry)
     return out
 
 # ── FLASK ROUTES ────────────────────────────────────────────
@@ -1370,6 +1438,218 @@ def api_portfolio_remove():
     conn.commit()
     conn.close()
     return jsonify({'ok': True})
+
+
+@app.route('/api/portfolio/pdf')
+@login_required
+def api_portfolio_pdf():
+    """Generate a professional PDF risk report for the user's portfolio."""
+    import io, datetime as dt
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+
+    user_id = session['user_id']
+    username = session.get('username', 'User')
+
+    # Fetch positions with live prices (reuse existing logic)
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        'SELECT id, ticker, direction, qty, entry_price, stop_pct, sector FROM portfolio WHERE user_id=? ORDER BY added_at',
+        (user_id,)
+    ).fetchall()
+    conn.close()
+
+    positions = []
+    for row in rows:
+        pid, ticker, direction, qty, entry_price, stop_pct, sector = row
+        try:
+            hist = yf.Ticker(ticker).history(period='2d', auto_adjust=True)
+            cur = float(hist['Close'].iloc[-1]) if len(hist) >= 1 else entry_price
+        except Exception:
+            cur = entry_price
+        pnl = (cur - entry_price) * qty if direction == 'LONG' else (entry_price - cur) * qty
+        pnl_pct = (cur - entry_price) / entry_price * 100 if direction == 'LONG' else (entry_price - cur) / entry_price * 100
+        stop_price = cur * (1 - stop_pct / 100) if direction == 'LONG' else cur * (1 + stop_pct / 100)
+        max_loss = qty * abs(cur - stop_price)
+        positions.append({
+            'ticker': ticker, 'direction': direction, 'qty': qty,
+            'entry': entry_price, 'cur': cur, 'sector': sector,
+            'pnl': pnl, 'pnl_pct': pnl_pct,
+            'stop_price': stop_price, 'max_loss': max_loss,
+            'exposure': qty * cur
+        })
+
+    # Risk calculations
+    total_exp = sum(p['exposure'] for p in positions)
+    total_pnl = sum(p['pnl'] for p in positions)
+    vols = {'Technology':.025,'Financials':.018,'Healthcare':.015,'Energy':.022,
+            'Consumer':.020,'Industrials':.017,'Materials':.020,'Utilities':.012,'Unknown':.020}
+    var_sq = sum((p['exposure'] * vols.get(p['sector'], .020) * 1.645)**2 for p in positions)
+    VaR = var_sq**0.5
+    CVaR = VaR * 1.25
+    max_loss_total = sum(p['max_loss'] for p in positions)
+    largest_pct = max((p['exposure'] / max(total_exp, 1) * 100 for p in positions), default=0)
+
+    # Build PDF
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=20*mm, rightMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm)
+
+    BG   = colors.HexColor('#05080f')
+    CYAN = colors.HexColor('#00d4ff')
+    GREEN= colors.HexColor('#00e87a')
+    RED  = colors.HexColor('#ff3355')
+    YEL  = colors.HexColor('#ffc200')
+    DARK = colors.HexColor('#0a0f1c')
+    BORD = colors.HexColor('#162035')
+    TXT  = colors.HexColor('#dde6f0')
+    TXT2 = colors.HexColor('#7090b0')
+
+    def sty(name, **kw):
+        base = {'fontName':'Courier','fontSize':9,'textColor':TXT,'backColor':BG}
+        base.update(kw)
+        return ParagraphStyle(name, **base)
+
+    story = []
+
+    # Header
+    story.append(Paragraph(
+        f'<font color="#00d4ff" size="18"><b>AlphaEdge</b></font>'
+        f'<font color="#dde6f0" size="18"> — PORTFOLIO RISK REPORT</font>',
+        sty('h', fontSize=18, alignment=TA_LEFT)))
+    story.append(Spacer(1, 3*mm))
+    story.append(Paragraph(
+        f'Generated: {dt.datetime.now().strftime("%Y-%m-%d %H:%M")}  |  User: {username}  |  Positions: {len(positions)}',
+        sty('sub', fontSize=8, textColor=TXT2)))
+    story.append(HRFlowable(width='100%', thickness=1, color=BORD, spaceAfter=5*mm))
+
+    # Summary stats row
+    risk_lvl = VaR / max(total_exp, 1)
+    risk_str = 'HIGH RISK' if risk_lvl > .03 else ('MODERATE' if risk_lvl > .02 else 'LOW RISK')
+    risk_col = RED if risk_lvl > .03 else (YEL if risk_lvl > .02 else GREEN)
+    pnl_col  = GREEN if total_pnl >= 0 else RED
+
+    summary_data = [
+        ['TOTAL EXPOSURE', 'TOTAL P&L', '1-DAY VaR 95%', 'CVaR', 'RISK LEVEL'],
+        [
+            f'${total_exp:,.2f}',
+            ('+' if total_pnl >= 0 else '') + f'${total_pnl:,.2f}',
+            f'${VaR:,.2f}',
+            f'${CVaR:,.2f}',
+            risk_str
+        ]
+    ]
+    sum_tbl = Table(summary_data, colWidths=[35*mm]*5)
+    sum_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), DARK),
+        ('BACKGROUND', (0,1), (-1,1), BG),
+        ('TEXTCOLOR', (0,0), (-1,0), TXT2),
+        ('TEXTCOLOR', (0,1), (0,1), CYAN),
+        ('TEXTCOLOR', (1,1), (1,1), pnl_col),
+        ('TEXTCOLOR', (2,1), (3,1), YEL),
+        ('TEXTCOLOR', (4,1), (4,1), risk_col),
+        ('FONTNAME', (0,0), (-1,-1), 'Courier'),
+        ('FONTSIZE', (0,0), (-1,0), 7),
+        ('FONTSIZE', (0,1), (-1,1), 11),
+        ('FONTNAME', (0,1), (-1,1), 'Courier-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('ROWHEIGHT', (0,0), (-1,0), 14),
+        ('ROWHEIGHT', (0,1), (-1,1), 18),
+        ('BOX', (0,0), (-1,-1), 0.5, BORD),
+        ('INNERGRID', (0,0), (-1,-1), 0.3, BORD),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(sum_tbl)
+    story.append(Spacer(1, 5*mm))
+
+    # Positions table
+    story.append(Paragraph('POSITIONS', sty('sec', fontSize=8, textColor=TXT2)))
+    story.append(Spacer(1, 2*mm))
+
+    pos_header = ['TICKER','DIR','QTY','ENTRY','CURRENT','SECTOR','P&L $','P&L %','STOP $','MAX LOSS']
+    pos_data = [pos_header]
+    pos_colors = []
+    for i, p in enumerate(positions, 1):
+        row = [
+            p['ticker'], p['direction'], str(int(p['qty'])),
+            f"${p['entry']:.2f}", f"${p['cur']:.2f}", p['sector'],
+            ('+' if p['pnl']>=0 else '') + f"${p['pnl']:.2f}",
+            ('+' if p['pnl_pct']>=0 else '') + f"{p['pnl_pct']:.2f}%",
+            f"${p['stop_price']:.2f}", f"-${p['max_loss']:.2f}"
+        ]
+        pos_data.append(row)
+        pos_colors.append(GREEN if p['pnl'] >= 0 else RED)
+
+    col_w = [18*mm, 12*mm, 12*mm, 18*mm, 18*mm, 28*mm, 18*mm, 14*mm, 18*mm, 18*mm]
+    pos_tbl = Table(pos_data, colWidths=col_w)
+    ts = [
+        ('BACKGROUND', (0,0), (-1,0), DARK),
+        ('TEXTCOLOR', (0,0), (-1,0), TXT2),
+        ('FONTNAME', (0,0), (-1,-1), 'Courier'),
+        ('FONTSIZE', (0,0), (-1,-1), 7),
+        ('FONTNAME', (0,0), (-1,0), 'Courier-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOX', (0,0), (-1,-1), 0.5, BORD),
+        ('INNERGRID', (0,0), (-1,-1), 0.3, BORD),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [BG, DARK]),
+        ('TEXTCOLOR', (0,1), (0,-1), CYAN),
+    ]
+    for i, col in enumerate(pos_colors):
+        ts.append(('TEXTCOLOR', (6, i+1), (7, i+1), col))
+    ts.append(('TEXTCOLOR', (9,1), (9,-1), RED))
+    pos_tbl.setStyle(TableStyle(ts))
+    story.append(pos_tbl)
+    story.append(Spacer(1, 5*mm))
+
+    # Sector breakdown
+    story.append(Paragraph('SECTOR EXPOSURE', sty('sec', fontSize=8, textColor=TXT2)))
+    story.append(Spacer(1, 2*mm))
+    sec_exp = {}
+    for p in positions:
+        sec_exp[p['sector']] = sec_exp.get(p['sector'], 0) + p['exposure']
+    sec_data = [['SECTOR', 'EXPOSURE $', '% OF PORTFOLIO']]
+    for sec, val in sorted(sec_exp.items(), key=lambda x: -x[1]):
+        sec_data.append([sec, f'${val:,.2f}', f"{val/max(total_exp,1)*100:.1f}%"])
+    sec_tbl = Table(sec_data, colWidths=[60*mm, 50*mm, 50*mm])
+    sec_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), DARK),
+        ('TEXTCOLOR', (0,0), (-1,0), TXT2),
+        ('FONTNAME', (0,0), (-1,-1), 'Courier'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('TEXTCOLOR', (0,1), (0,-1), TXT),
+        ('TEXTCOLOR', (1,1), (1,-1), CYAN),
+        ('TEXTCOLOR', (2,1), (2,-1), TXT2),
+        ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+        ('BOX', (0,0), (-1,-1), 0.5, BORD),
+        ('INNERGRID', (0,0), (-1,-1), 0.3, BORD),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [BG, DARK]),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(sec_tbl)
+    story.append(Spacer(1, 5*mm))
+
+    # Footer
+    story.append(HRFlowable(width='100%', thickness=1, color=BORD, spaceBefore=3*mm))
+    story.append(Paragraph(
+        'NOT FINANCIAL ADVICE — FOR RESEARCH USE ONLY | AlphaEdge v2.0 | alphaedge.io',
+        sty('ft', fontSize=7, textColor=TXT2, alignment=TA_CENTER)))
+
+    doc.build(story)
+    buf.seek(0)
+    fname = f"alphaedge_report_{dt.date.today()}.pdf"
+    from flask import send_file
+    return send_file(buf, mimetype='application/pdf',
+                     as_attachment=True, download_name=fname)
 
 # ── ANOMALY ACCURACY BACKTEST ─────────────────────────────────
 @app.route('/api/anomaly-accuracy')

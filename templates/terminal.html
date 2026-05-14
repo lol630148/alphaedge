@@ -423,7 +423,8 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <div class="pnl-hdr">
       <span class="pnl-title">⚡ PORTFOLIO TRACKER</span>
       <span id="portStatus" style="color:var(--text3);font-size:9px;margin-left:10px"></span>
-      <button class="btn" onclick="loadPortfolio()" style="margin-left:auto;padding:2px 8px;font-size:9px">↻ REFRESH</button>
+      <a href="/api/portfolio/pdf" target="_blank" class="btn" style="padding:2px 8px;font-size:9px;text-decoration:none;margin-left:auto">⬇ PDF REPORT</a>
+      <button class="btn" onclick="loadPortfolio()" style="padding:2px 8px;font-size:9px;margin-left:6px">↻ REFRESH</button>
     </div>
     <div class="pnl-body">
       <div class="scrl" style="max-height:200px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&amp;L $</th><th>P&amp;L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Nalagam pozicije…</td></tr></tbody></table></div>
@@ -1001,11 +1002,11 @@ function renderGauges(d){
       <div class="gauge-bar"><div class="gauge-fill" style="width:${g.v}%;background:${g.col};box-shadow:0 0 8px ${g.col}40"></div></div>
       <div class="gauge-val" style="color:${g.col}">${g.disp}</div></div>`).join('')+
     `<hr class="dv"><div class="sig-box" style="border-color:${sc}40">
-      <div style="color:${sc};font-weight:bold;font-size:11px">▶ SIGNAL: ${sg.sig}</div>
+      <div style="color:${sc};font-weight:bold;font-size:11px">▶ SIGNAL: ${sg.sig}${sg.pead_tag?' &nbsp;<span style="background:rgba(255,194,0,.15);color:var(--yellow);border:1px solid rgba(255,194,0,.3);padding:1px 6px;border-radius:2px;font-size:9px">'+sg.pead_tag+'</span>':''}</div>
       <p>RSI: <b style="color:var(--text)">${rsi.toFixed(1)}</b> — ${rsi>70?'overbought':rsi<30?'oversold':'neutral'}<br>
       Momentum 20d: <span style="color:${mom>0?C.green:C.red}">${fmt(mom)}</span><br>
       Sektor: <b style="color:var(--text)">${d.sector}</b> | Beta: ${d.beta}<br>
-      Vol ratio: <b style="color:var(--text)">${d.volRatio.toFixed(1)}×</b></p></div>`;
+      Vol ratio: <b style="color:var(--text)">${d.volRatio.toFixed(1)}×</b>${sg.pead?'<br>PEAD drift: <span style="color:var(--yellow)">'+fmt(sg.pead.drift)+'</span> after <span style="color:var(--text)">'+fmt(sg.pead.gap)+'</span> gap on <span style="color:var(--text)">'+sg.pead.vol_ratio.toFixed(1)+'× vol</span>':''}</p></div>`;
 }
 
 function renderSigHistory(d){
@@ -1018,7 +1019,7 @@ function renderSigHistory(d){
     const rc=sg.sig==='BUY'?'buy-row':sg.sig==='SELL'?'sell-row':'';
     return `<tr class="${rc}">
       <td style="color:var(--text3)">${sg.date}</td>
-      <td><span class="bdg ${bc}">${sg.sig}</span></td>
+      <td><span class="bdg ${bc}">${sg.sig}</span>${sg.pead_tag?` <span style="color:var(--yellow);font-size:8px">${sg.pead_tag}</span>`:''}</td>
       <td>$${sg.price.toFixed(2)}</td>
       <td class="${sg.rsi>70?'dn':sg.rsi<30?'up':''}">${sg.rsi}</td>
       <td class="${sg.mom>0?'up':'dn'}">${fmt(sg.mom)}</td>
@@ -1459,7 +1460,13 @@ function showTab(name){
   });
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('pg-'+name).classList.add('on');
-  if(name==='risk') loadPortfolio();
+  if(name==='risk'){
+    loadPortfolio();
+    clearInterval(window._portRefresh);
+    window._portRefresh = setInterval(loadPortfolio, 60000);
+  } else {
+    clearInterval(window._portRefresh);
+  }
   if(name==='news') loadNewsEarnings();
   if(name==='anomaly') loadAlertConfig();
   if(name==='watchlist') loadWatchlist();
