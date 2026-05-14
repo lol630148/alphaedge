@@ -356,6 +356,20 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <div class="pnl-hdr"><span class="pnl-title">◉ SIGNAL HISTORY — REAL DATA</span><span style="color:var(--text3);font-size:8px">LAST 25 — WITH OUTCOME</span></div>
     <div class="pnl-body"><div class="scrl"><table class="tbl"><thead><tr><th>DATE</th><th>SIGNAL</th><th>PRICE</th><th>RSI</th><th>MOM 20D</th><th>OUT +5D</th><th>OUT +20D</th></tr></thead><tbody id="sigHistBody"></tbody></table></div></div>
   </div>
+  <div class="pnl" style="margin-top:10px">
+    <div class="pnl-hdr">
+      <span class="pnl-title">⚡ PEAD SCANNER — POST-EARNINGS DRIFT</span>
+      <span id="peadStatus" style="color:var(--text3);font-size:8px;margin-left:10px"></span>
+      <button class="btn g" onclick="runPeadScan()" style="margin-left:auto;padding:2px 10px;font-size:9px">SCAN ▶</button>
+    </div>
+    <div class="pnl-body">
+      <div class="scrl" style="max-height:180px">
+        <table class="tbl"><thead><tr><th>TICKER</th><th>NAME</th><th>SEKTOR</th><th>CENA</th><th>SIGNAL</th><th>GAP %</th><th>DRIFT %</th><th>VOL RATIO</th><th></th></tr></thead>
+        <tbody id="peadBody"><tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px">Klikni SCAN za zaznavo PEAD signalov v univerzu</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ BACKTEST ══ -->
@@ -1007,6 +1021,38 @@ function renderGauges(d){
       Momentum 20d: <span style="color:${mom>0?C.green:C.red}">${fmt(mom)}</span><br>
       Sektor: <b style="color:var(--text)">${d.sector}</b> | Beta: ${d.beta}<br>
       Vol ratio: <b style="color:var(--text)">${d.volRatio.toFixed(1)}×</b>${sg.pead?'<br>PEAD drift: <span style="color:var(--yellow)">'+fmt(sg.pead.drift)+'</span> after <span style="color:var(--text)">'+fmt(sg.pead.gap)+'</span> gap on <span style="color:var(--text)">'+sg.pead.vol_ratio.toFixed(1)+'× vol</span>':''}</p></div>`;
+}
+
+
+async function runPeadScan(){
+  const status = document.getElementById('peadStatus');
+  const body   = document.getElementById('peadBody');
+  status.textContent = 'Skeniranje 60 delnic…';
+  body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px"><span class="loader">Računam PEAD signale</span></td></tr>';
+  try {
+    const d = await fetch('/api/pead-scan').then(r=>r.json());
+    const results = d.results || [];
+    status.textContent = results.length + ' PEAD signalov najdenih';
+    if(!results.length){
+      body.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px">Ni aktivnih PEAD signalov</td></tr>';
+      return;
+    }
+    body.innerHTML = results.map(r=>`
+      <tr style="cursor:pointer" onclick="quickSig('${r.ticker}')">
+        <td style="color:var(--cyan)">${r.ticker}</td>
+        <td style="color:var(--text2)">${r.name}</td>
+        <td style="color:var(--text3)">${r.sector}</td>
+        <td>$${r.price.toFixed(2)}</td>
+        <td><span style="background:${r.direction==='LONG'?'rgba(0,232,122,.15)':'rgba(255,51,85,.15)'};color:${r.direction==='LONG'?C.green:C.red};border:1px solid ${r.direction==='LONG'?'rgba(0,232,122,.3)':'rgba(255,51,85,.3)'};padding:1px 6px;border-radius:2px;font-size:9px">${r.tag}</span></td>
+        <td class="${r.gap>=0?'up':'dn'}">${r.gap>=0?'+':''}${r.gap.toFixed(2)}%</td>
+        <td class="${r.drift>=0?'up':'dn'}">${r.drift>=0?'+':''}${r.drift.toFixed(2)}%</td>
+        <td style="color:var(--yellow)">${r.vol_ratio.toFixed(1)}×</td>
+        <td><button class="btn g" onclick="event.stopPropagation();quickSig('${r.ticker}')" style="padding:1px 6px;font-size:9px">SIG ▶</button></td>
+      </tr>`).join('');
+  } catch(e){
+    status.textContent = '⚠ Napaka';
+    body.innerHTML='<tr><td colspan="9" style="color:var(--red);text-align:center;padding:10px">Napaka pri skeniranju</td></tr>';
+  }
 }
 
 function renderSigHistory(d){

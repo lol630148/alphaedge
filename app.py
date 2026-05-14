@@ -382,15 +382,16 @@ def compute_signals(hist_df):
         entry = {'date':dates[i], 'price':round(closes[i],2),
                  'rsi':rsi, 'mom':round(float(mom),2), 'sig':sig}
 
-        # Tag last bar with PEAD if detected
+        # Tag last bar with PEAD if detected — always show tag, boost signal
         if i == len(closes) - 1 and pead:
             entry['pead'] = pead
-            if pead['direction'] == 'LONG' and sig != 'SELL':
+            tag = 'PEAD ↑' if pead['direction'] == 'LONG' else 'PEAD ↓'
+            entry['pead_tag'] = tag
+            # Boost signal if PEAD confirms direction
+            if pead['direction'] == 'LONG' and sig == 'NEUTRAL':
                 entry['sig'] = 'BUY'
-                entry['pead_tag'] = 'PEAD ↑'
-            elif pead['direction'] == 'SHORT' and sig != 'BUY':
+            elif pead['direction'] == 'SHORT' and sig == 'NEUTRAL':
                 entry['sig'] = 'SELL'
-                entry['pead_tag'] = 'PEAD ↓'
 
         out.append(entry)
     return out
@@ -1650,6 +1651,69 @@ def api_portfolio_pdf():
     from flask import send_file
     return send_file(buf, mimetype='application/pdf',
                      as_attachment=True, download_name=fname)
+
+
+@app.route('/api/pead-scan')
+@login_required
+def api_pead_scan():
+    """Scan SP150 universe for active PEAD signals."""
+    def check_one(ticker):
+        try:
+            hist = yf.Ticker(ticker).history(period='6mo', auto_adjust=True)
+            if len(hist) < 30:
+                return None
+            pead = detect_pead(hist)
+            if not pead:
+                return None
+            closes = hist['Close'].values.astype(float)
+            info = UNI_MAP.get(ticker, {'n': ticker, 's': 'Unknown'})
+            return {
+                'ticker': ticker,
+                'name': info.get('n', ticker),
+                'sector': info.get('s', 'Unknown'),
+                'price': round(float(closes[-1]), 2),
+                'direction': pead['direction'],
+                'gap': round(pead['gap'], 2),
+                'drift': round(pead['drift'], 2),
+                'vol_ratio': round(pead['vol_ratio'], 2),
+                'tag': 'PEAD ↑' if pead['direction'] == 'LONG' else 'PEAD ↓'
+            }
+        except Exception:
+            return None
+
+    results = cached('pead_scan', lambda: _run_pead_scan(), ttl=1800)
+    return jsonify({'results': results})
+
+def _run_pead_scan():
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    out = []
+    with ThreadPoolExecutor(max_workers=10) as ex:
+        futs = {ex.submit(lambda t: __import__('yfinance').Ticker(t).history(period='6mo', auto_adjust=True), t): t for t in SP150[:60]}
+        for f in as_completed(futs):
+            t = futs[f]
+            try:
+                hist = f.result()
+                if len(hist) < 30:
+                    continue
+                pead = detect_pead(hist)
+                if not pead:
+                    continue
+                closes = hist['Close'].values.astype(float)
+                info = UNI_MAP.get(t, {'n': t, 's': 'Unknown'})
+                out.append({
+                    'ticker': t, 'name': info.get('n', t),
+                    'sector': info.get('s', 'Unknown'),
+                    'price': round(float(closes[-1]), 2),
+                    'direction': pead['direction'],
+                    'gap': round(pead['gap'], 2),
+                    'drift': round(pead['drift'], 2),
+                    'vol_ratio': round(pead['vol_ratio'], 2),
+                    'tag': 'PEAD ↑' if pead['direction'] == 'LONG' else 'PEAD ↓'
+                })
+            except Exception:
+                pass
+    out.sort(key=lambda x: abs(x['drift']), reverse=True)
+    return out
 
 # ── ANOMALY ACCURACY BACKTEST ─────────────────────────────────
 @app.route('/api/anomaly-accuracy')
