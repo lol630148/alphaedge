@@ -173,7 +173,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     </span>
     {% if is_admin %}<button class="btn" onclick="showAdminPanel()" style="font-size:9px;padding:2px 7px" title="Upravljanje uporabnikov">⚙ ADMIN</button>{% endif %}
     <button class="btn" onclick="showChangePwModal()" style="font-size:9px;padding:2px 7px" title="Change Password">🔑 PASSWORD</button>
-    <a href="/logout" class="btn r" style="font-size:9px;padding:2px 7px;text-decoration:none">↩ ODJAVA</a>
+    <a href="/logout" class="btn r" style="font-size:9px;padding:2px 7px;text-decoration:none">↩ LOGOUT</a>
   </div>
 </div>
 
@@ -294,16 +294,16 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
           <button class="btn"   onclick="loadMovers()">⟳</button>
         </div>
       </div>
-      <div class="pnl-body"><div class="scrl" id="moversBox"><div class="loader">Nalagam žive podatke</div></div></div>
+      <div class="pnl-body"><div class="scrl" id="moversBox"><div class="loader">Loading live data</div></div></div>
     </div>
     <div class="pnl">
       <div class="pnl-hdr"><span class="pnl-title">⚡ ANOMALY ALERTS</span><span id="alertCnt" style="color:var(--yellow);font-size:9px">—</span></div>
-      <div class="pnl-body"><div class="scrl" id="alertsBox"><div class="loader">Analiziram</div></div></div>
+      <div class="pnl-body"><div class="scrl" id="alertsBox"><div class="loader">Analysing</div></div></div>
     </div>
   </div>
   <div class="pnl" style="margin-bottom:10px">
     <div class="pnl-hdr"><span class="pnl-title">▦ SECTOR HEATMAP — LIVE</span><span style="color:var(--text3);font-size:8px">1-DAY RETURN</span></div>
-    <div class="pnl-body"><div class="hmap" id="heatmap"><div class="loader" style="grid-column:1/-1">Nalagam sektorje</div></div></div>
+    <div class="pnl-body"><div class="hmap" id="heatmap"><div class="loader" style="grid-column:1/-1">Loading sectors</div></div></div>
   </div>
   <div class="pnl">
     <div class="pnl-hdr"><span class="pnl-title">◉ VOLUME ANOMALY SCAN</span><span style="color:var(--text3);font-size:8px">RATIO vs 20D AVG</span></div>
@@ -441,7 +441,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       <button class="btn" onclick="loadPortfolio()" style="padding:2px 8px;font-size:9px;margin-left:6px">↻ REFRESH</button>
     </div>
     <div class="pnl-body">
-      <div class="scrl" style="max-height:200px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&amp;L $</th><th>P&amp;L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Nalagam pozicije…</td></tr></tbody></table></div>
+      <div class="scrl" style="max-height:200px"><table class="tbl"><thead><tr><th>TICKER</th><th>DIR</th><th>QTY</th><th>ENTRY</th><th>CURRENT</th><th>SECTOR</th><th>P&amp;L $</th><th>P&amp;L %</th><th>STOP $</th><th>MAX LOSS</th><th>✕</th></tr></thead><tbody id="portBody"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Loading positions…</td></tr></tbody></table></div>
       <hr class="dv">
       <div class="inp-row" style="margin-bottom:0">
         <div class="inp-grp"><label>Ticker</label><input type="text" class="fi" id="nTick" placeholder="AAPL" style="width:75px;text-transform:uppercase"></div>
@@ -808,8 +808,8 @@ async function loadHeader(){
 let allStocks=[], moverMode='g';
 
 async function loadMovers(){
-  document.getElementById('moversBox').innerHTML='<div class="loader">Nalagam žive podatke</div>';
-  setStatus('Nalagam top movers iz Yahoo Finance…','yellow');
+  document.getElementById('moversBox').innerHTML='<div class="loader">Loading live data</div>';
+  setStatus('Loading top movers from Yahoo Finance…','yellow');
   try{
     const res=await fetch('/api/movers');
     const d=await res.json();
@@ -837,7 +837,7 @@ function showMovers(mode){
   const sorted=[...allStocks].sort((a,b)=>
     mode==='g'?b.chg-a.chg:mode==='l'?a.chg-b.chg:b.volRatio-a.volRatio
   ).slice(0,12);
-  if(!sorted.length){document.getElementById('moversBox').innerHTML='<div class="loader">Nalagam</div>';return;}
+  if(!sorted.length){document.getElementById('moversBox').innerHTML='<div class="loader">Loading</div>';return;}
   document.getElementById('moversBox').innerHTML=`
     <table class="tbl">
       <thead><tr><th>TICKER</th><th>PRICE</th><th>CHG%</th><th>VOLUME</th><th>VOL/AVG</th></tr></thead>
@@ -893,10 +893,10 @@ async function runSignal(){
   const ticker=document.getElementById('sigTicker').value.toUpperCase().trim();
   const period=document.getElementById('sigPeriod').value;
   if(!ticker) return;
-  document.getElementById('gaugesBox').innerHTML='<div class="loader">Nalagam '+ticker+'</div>';
+  document.getElementById('gaugesBox').innerHTML='<div class="loader">Loading '+ticker+'</div>';
   document.getElementById('sigHistBody').innerHTML='';
-  document.getElementById('sigChartTitle').textContent=ticker+' — nalagam…';
-  setStatus(`Nalagam ${ticker} iz Yahoo Finance…`,'yellow');
+  document.getElementById('sigChartTitle').textContent=ticker+' — loading…';
+  setStatus(`Loading ${ticker} from Yahoo Finance…`,'yellow');
   try{
     const res=await fetch(`/api/stock/${ticker}?period=${period}`);
     if(!res.ok) throw new Error('Not found');
@@ -1180,7 +1180,7 @@ async function removePos(pid){
 }
 
 async function loadPortfolio(){
-  document.getElementById('portStatus').textContent = 'Nalagam live cene…';
+  document.getElementById('portStatus').textContent = 'Loading live prices…';
   try {
     const res = await fetch('/api/portfolio');
     const d = await res.json();
@@ -1348,9 +1348,9 @@ async function loadNewsEarnings(){
   const ticker = document.getElementById('newsTicker').value.toUpperCase().trim();
   if(!ticker) return;
   document.getElementById('newsTickerLbl').textContent = ticker;
-  document.getElementById('newsFeed').innerHTML = '<div class="loader">Nalagam novice za '+ticker+'</div>';
-  document.getElementById('earningsNext').innerHTML = '<div class="loader">Nalagam earnings</div>';
-  setStatus('Nalagam news & earnings za '+ticker+'…','yellow');
+  document.getElementById('newsFeed').innerHTML = '<div class="loader">Loading news for '+ticker+'</div>';
+  document.getElementById('earningsNext').innerHTML = '<div class="loader">Loading earnings</div>';
+  setStatus('Loading news & earnings for '+ticker+'…','yellow');
 
   // Load news and earnings in parallel
   const [newsRes, earnRes] = await Promise.all([
@@ -1466,8 +1466,8 @@ async function loadEarningsCalendar(){
   const panel = document.getElementById('earningsCalPanel');
   panel.style.display = 'block';
   document.getElementById('calLoadingLbl').textContent = 'NALAGAM… (može trajati 30s)';
-  document.getElementById('earningsCalBody').innerHTML = '<tr><td colspan="6"><div class="loader">Nalagam earnings calendar za 20 delnic</div></td></tr>';
-  setStatus('Nalagam earnings calendar za celoten universe…','yellow');
+  document.getElementById('earningsCalBody').innerHTML = '<tr><td colspan="6"><div class="loader">Loading earnings calendar for 20 stocks</div></td></tr>';
+  setStatus('Loading earnings calendar for full universe…','yellow');
 
   try{
     const res = await fetch('/api/earnings-calendar');
@@ -1891,7 +1891,7 @@ async function showAdminPanel(){
 function hideAdminPanel(){document.getElementById('adminModal').style.display='none';}
 async function loadAdminUsers(){
   const list=document.getElementById('adminUserList');
-  list.innerHTML='<div style="color:var(--text3)">Nalagam...</div>';
+  list.innerHTML='<div style="color:var(--text3)">Loading...</div>';
   const r=await fetch('/admin/users').then(r=>r.json()).catch(()=>({users:[]}));
   if(!r.users||!r.users.length){list.innerHTML='<div style="color:var(--text3)">Ni uporabnikov</div>';return;}
   list.innerHTML=r.users.map(u=>`
@@ -1970,7 +1970,7 @@ async function runAccuracy(){
   const body = document.getElementById('accBody');
   btn.disabled = true; btn.textContent = 'Racunam...';
   body.innerHTML = '<div style="color:var(--yellow);padding:16px;text-align:center">'+
-    '<div style="font-size:12px;margin-bottom:6px">Analiziram 30 delnic na 6 mesecih zgodovinskih podatkov...</div>'+
+    '<div style="font-size:12px;margin-bottom:6px">Analysing 30 stocks over 6 months of historical data...</div>'+
     '<div style="color:var(--text3);font-size:10px">Preverjam korelacije, volumne, momentum za vsak dan — prosim pocakaj ~30s</div></div>';
 
   const r = await fetch('/api/anomaly-accuracy').then(r=>r.json()).catch(()=>({error:'Napaka pri povezavi'}));
@@ -2089,7 +2089,7 @@ async function scanWatchlist(){
   const btn = document.getElementById('wlScanBtn');
   const msg = document.getElementById('wlMsg');
   btn.disabled=true; btn.textContent='Skeniram...';
-  msg.style.color='var(--yellow)'; msg.textContent='Nalagam podatke...';
+  msg.style.color='var(--yellow)'; msg.textContent='Loading data...';
   
   const r = await fetch('/api/watchlist/scan').then(r=>r.json()).catch(()=>({results:[]}));
   btn.disabled=false; btn.textContent='&#9654; SCAN ALL';
