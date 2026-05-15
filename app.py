@@ -80,7 +80,7 @@ def init_db():
         c.execute('INSERT INTO users (username, email, password_hash, role) VALUES (?,?,?,?)',
                   ('admin', '', generate_password_hash('admin123'), 'admin'))
         print('  ✔ Default user created: admin / admin123')
-        print('  ⚠  SPREMENI geslo po prvem vpisu!')
+        print('  ⚠  CHANGE password after first login!')
     conn.commit()
     conn.close()
 
@@ -427,7 +427,7 @@ def login():
             session['username'] = user['username']
             session['role']     = user['role'] or 'user'
             return redirect('/')
-        err = 'Napačno uporabniško ime ali geslo.'
+        err = 'Incorrect username or password.'
     return render_template('login.html', error=err)
 
 @app.route('/logout')
@@ -457,7 +457,7 @@ def admin_add_user():
         conn.commit(); conn.close()
         return jsonify({'ok': True, 'username': username})
     except sqlite3.IntegrityError:
-        return jsonify({'error': f'Uporabnik {username} že obstaja'}), 409
+        return jsonify({'error': f'User {username} already exists'}), 409
 
 @app.route('/admin/users/delete', methods=['POST'])
 @admin_required
@@ -478,10 +478,10 @@ def admin_change_password():
     old_pw  = data.get('old_password','')
     new_pw  = data.get('new_password','')
     if len(new_pw) < 6:
-        return jsonify({'error': 'Geslo mora biti vsaj 6 znakov'}), 400
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
     user = get_user(session['username'])
     if not user or not check_password_hash(user['password_hash'], old_pw):
-        return jsonify({'error': 'Staro geslo je napačno'}), 403
+        return jsonify({'error': 'Old password is incorrect'}), 403
     conn = sqlite3.connect(DB_PATH)
     conn.execute('UPDATE users SET password_hash=? WHERE id=?',
                  (generate_password_hash(new_pw), session['user_id']))

@@ -172,7 +172,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       ◈ <span style="color:var(--cyan)">{{ username }}</span>
     </span>
     {% if is_admin %}<button class="btn" onclick="showAdminPanel()" style="font-size:9px;padding:2px 7px" title="Upravljanje uporabnikov">⚙ ADMIN</button>{% endif %}
-    <button class="btn" onclick="showChangePwModal()" style="font-size:9px;padding:2px 7px" title="Spremeni geslo">🔑 GESLO</button>
+    <button class="btn" onclick="showChangePwModal()" style="font-size:9px;padding:2px 7px" title="Change Password">🔑 PASSWORD</button>
     <a href="/logout" class="btn r" style="font-size:9px;padding:2px 7px;text-decoration:none">↩ ODJAVA</a>
   </div>
 </div>
@@ -202,24 +202,24 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 <div id="changePwModal" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.92);z-index:300;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--bord2);border-radius:3px;width:360px;max-width:95vw;box-shadow:0 0 60px rgba(0,212,255,.1)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
-      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">🔑 SPREMENI GESLO</span>
+      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">🔑 CHANGE PASSWORD</span>
       <button onclick="hideChangePwModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>
     </div>
     <div style="padding:16px">
       <div style="margin-bottom:12px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">TRENUTNO GESLO</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">CURRENT PASSWORD</div>
         <input type="password" id="cpOldPw" class="fi" placeholder="••••••••" style="width:100%">
       </div>
       <div style="margin-bottom:12px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">NOVO GESLO</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">NEW PASSWORD</div>
         <input type="password" id="cpNewPw" class="fi" placeholder="••••••••" style="width:100%">
       </div>
       <div style="margin-bottom:14px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">PONOVI NOVO GESLO</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:4px">CONFIRM NEW PASSWORD</div>
         <input type="password" id="cpNewPw2" class="fi" placeholder="••••••••" style="width:100%">
       </div>
       <div id="cpMsg" style="font-size:10px;margin-bottom:10px;min-height:14px"></div>
-      <button class="btn g" onclick="submitChangePw()" style="width:100%;padding:8px;letter-spacing:1px">SHRANI NOVO GESLO</button>
+      <button class="btn g" onclick="submitChangePw()" style="width:100%;padding:8px;letter-spacing:1px">SAVE NEW PASSWORD</button>
     </div>
   </div>
 </div>
@@ -241,7 +241,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 
       <!-- Add user -->
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">DODAJ NOVEGA UPORABNIKA</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">ADD NEW USER</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end">
           <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">USERNAME</div>
             <input type="text" id="newUserName" class="fi" placeholder="john" style="width:100%"></div>
@@ -249,20 +249,20 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
             <input type="password" id="newUserPw" class="fi" placeholder="••••••" style="width:100%"></div>
           <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">EMAIL</div>
             <input type="text" id="newUserEmail" class="fi" placeholder="john@firm.com" style="width:100%"></div>
-          <button class="btn g" onclick="adminAddUser()" style="white-space:nowrap">+ DODAJ</button>
+          <button class="btn g" onclick="adminAddUser()" style="white-space:nowrap">+ ADD</button>
         </div>
         <div id="adminAddMsg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
       </div>
 
       <!-- Change password -->
       <div style="border-top:1px solid var(--border);padding-top:14px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">SPREMENI SVOJE GESLO</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">CHANGE YOUR PASSWORD</div>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end">
-          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">STARO GESLO</div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">OLD PASSWORD</div>
             <input type="password" id="oldPw" class="fi" placeholder="••••••" style="width:100%"></div>
-          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">NOVO GESLO</div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">NEW PASSWORD</div>
             <input type="password" id="newPw" class="fi" placeholder="••••••" style="width:100%"></div>
-          <button class="btn" onclick="adminChangePw()">SHRANI</button>
+          <button class="btn" onclick="adminChangePw()">SAVE</button>
         </div>
         <div id="adminPwMsg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
       </div>
@@ -365,7 +365,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <div class="pnl-body">
       <div class="scrl" style="max-height:180px">
         <table class="tbl"><thead><tr><th>TICKER</th><th>NAME</th><th>SEKTOR</th><th>CENA</th><th>SIGNAL</th><th>GAP %</th><th>DRIFT %</th><th>VOL RATIO</th><th></th></tr></thead>
-        <tbody id="peadBody"><tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px">Klikni SCAN za zaznavo PEAD signalov v univerzu</td></tr></tbody>
+        <tbody id="peadBody"><tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px">Click SCAN to detect PEAD signals across the universe</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -494,7 +494,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       </div>
       <div class="pnl-body">
         <div class="scrl" style="max-height:420px" id="newsFeed">
-          <div class="loader">Izberi ticker in klikni LOAD</div>
+          <div class="loader">Select a ticker and click LOAD</div>
         </div>
       </div>
     </div>
@@ -582,12 +582,12 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <!-- Results table -->
   <div class="pnl">
     <div class="pnl-hdr">
-      <span class="pnl-title" id="anomalyTableTitle">REZULTATI — KLIKNI RUN SCAN</span>
+      <span class="pnl-title" id="anomalyTableTitle">RESULTS — CLICK RUN SCAN</span>
       <span style="color:var(--text3);font-size:8px">RAZVRŠČENO PO ANOMALY SCORE ↓</span>
     </div>
     <div class="pnl-body" style="padding:0">
       <div id="anomalyMsg" style="padding:24px;text-align:center;color:var(--text3);font-size:11px">
-        Pritisni <span style="color:var(--green)">▶ RUN SCAN</span> — pregledamo ~150 delnic in poiščemo sumljive vzorce pred earnings.<br>
+        Press <span style="color:var(--green)">▶ RUN SCAN</span> — we screen ~150 stocks for unusual patterns before earnings.<br>
         <span style="font-size:9px;opacity:.6">Skeniranje traja ~25-35 sekund (live Yahoo Finance podatki)</span>
       </div>
       <div class="scrl" style="max-height:480px;display:none" id="anomalyTableWrap">
@@ -630,7 +630,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     </div>
     <div class="pnl-body" id="accBody">
       <div style="color:var(--text3);font-size:11px;padding:12px;text-align:center">
-        Klikni IZRACUNAJ TOCNOST — analizira 30 delnic na 6 mesecih podatkov (~30 sekund)
+        Click CALCULATE ACCURACY — analyses 30 stocks over 6 months of data (~30 seconds)
       </div>
     </div>
   </div>
@@ -662,14 +662,14 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
           <input type="text" id="alertSmtpUser" class="fi" placeholder="vas@gmail.com" style="width:100%">
         </div>
         <div>
-          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">APP GESLO (Gmail App Password)</div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">APP PASSWORD (Gmail App Password)</div>
           <input type="password" id="alertSmtpPass" class="fi" placeholder="xxxx xxxx xxxx xxxx" style="width:100%">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px">
         <div>
           <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">PREJEMNIKI (loceni z vejico)</div>
-          <input type="text" id="alertRecipients" class="fi" placeholder="stranka@firma.com, boss@firma.com" style="width:100%">
+          <input type="text" id="alertRecipients" class="fi" placeholder="client@firm.com, boss@firm.com" style="width:100%">
         </div>
         <div>
           <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">MIN. SIGNAL STOPNJA</div>
@@ -686,7 +686,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
           <input type="checkbox" id="alertEnabled" style="width:14px;height:14px">
           <span style="color:var(--text2);font-size:10px">OMOGOCI DNEVNE ALERTE</span>
         </label>
-        <button class="btn g" onclick="saveAlertConfig()" style="font-size:10px">SHRANI</button>
+        <button class="btn g" onclick="saveAlertConfig()" style="font-size:10px">SAVE</button>
         <button class="btn" onclick="testAlertEmail()" style="font-size:10px">TESTIRAJ EMAIL</button>
         <button class="btn" onclick="runAlertNow()" style="font-size:10px;border-color:var(--yellow);color:var(--yellow)">POŠLJI ZDAJ</button>
         <span id="alertMsg" style="font-size:10px;color:var(--text3)"></span>
@@ -696,7 +696,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
         1. Vklopi 2-faktorsko avtentikacijo na Google racunu &nbsp;|&nbsp;
         2. Pojdi na myaccount.google.com &rarr; Varnost &rarr; App passwords &nbsp;|&nbsp;
         3. Ustvari App Password za "Mail" &nbsp;|&nbsp;
-        4. Vstavi 16-znakovni kod v polje App Geslo zgoraj
+        4. Paste the 16-character code into the App Password field above
       </div>
     </div>
   </div>
@@ -714,11 +714,11 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 <!-- == WATCHLIST == -->
 <div id="pg-watchlist" class="page">
   <div class="inp-row">
-    <div class="inp-grp"><label>Dodaj delnico</label>
+    <div class="inp-grp"><label>Add ticker</label>
       <input type="text" class="fi" id="wlTicker" placeholder="AAPL" style="width:100px;text-transform:uppercase"
         onkeydown="if(event.key==='Enter')addToWatchlist()">
     </div>
-    <button class="btn g" onclick="addToWatchlist()">+ DODAJ</button>
+    <button class="btn g" onclick="addToWatchlist()">+ ADD</button>
     <button class="btn" onclick="scanWatchlist()" id="wlScanBtn">&#9654; SCAN ALL</button>
     <span id="wlMsg" style="font-size:10px;color:var(--text3);margin-left:8px"></span>
   </div>
@@ -732,13 +732,13 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       <div class="scrl">
         <table class="tbl" id="wlTable">
           <thead><tr>
-            <th>#</th><th>TICKER</th><th>IME</th><th>SEKTOR</th>
+            <th>#</th><th>TICKER</th><th>NAME</th><th>SECTOR</th>
             <th>CENA</th><th>DAN %</th><th>RSI</th><th>SIGNAL</th>
             <th>VOL/AVG</th><th>DNI DO EARN.</th><th></th>
           </tr></thead>
           <tbody id="wlBody">
             <tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">
-              Dodaj delnice s poljem zgoraj
+              Add stocks using the field above
             </td></tr>
           </tbody>
         </table>
@@ -817,10 +817,10 @@ async function loadMovers(){
     showMovers(moverMode);
     renderAlerts();
     renderVolChart();
-    setStatus(`✓ Live podatki naloženi — ${allStocks.length} delnic`);
+    setStatus(`✓ Live data loaded — ${allStocks.length} stocks`);
   }catch(e){
-    document.getElementById('moversBox').innerHTML='<div style="color:var(--red);padding:12px">⚠ Napaka pri nalaganju. Preveri da teče Flask server.</div>';
-    setStatus('⚠ Napaka pri nalaganju podatkov','red');
+    document.getElementById('moversBox').innerHTML='<div style="color:var(--red);padding:12px">⚠ Error loading data. Make sure the Flask server is running.</div>';
+    setStatus('⚠ Error loading data','red');
   }
 }
 
@@ -909,10 +909,10 @@ async function runSignal(){
     renderPriceChart(d);
     renderGauges(d);
     renderSigHistory(d);
-    setStatus(`✓ ${ticker} naložen — ${d.history.length} dni zgodovine`);
+    setStatus(`✓ ${ticker} loaded — ${d.history.length} days of history`);
   }catch(e){
-    document.getElementById('gaugesBox').innerHTML=`<div style="color:var(--red);padding:10px">⚠ Ticker "${ticker}" ni najden ali napaka pri nalaganju.</div>`;
-    setStatus('⚠ Napaka pri nalaganju '+ticker,'red');
+    document.getElementById('gaugesBox').innerHTML=`<div style="color:var(--red);padding:10px">⚠ Ticker "${ticker}" not found or failed to load.</div>`;
+    setStatus('⚠ Error loading '+ticker,'red');
   }
 }
 
@@ -1050,8 +1050,8 @@ async function runPeadScan(){
         <td><button class="btn g" onclick="event.stopPropagation();quickSig('${r.ticker}')" style="padding:1px 6px;font-size:9px">SIG ▶</button></td>
       </tr>`).join('');
   } catch(e){
-    status.textContent = '⚠ Napaka';
-    body.innerHTML='<tr><td colspan="9" style="color:var(--red);text-align:center;padding:10px">Napaka pri skeniranju</td></tr>';
+    status.textContent = '⚠ Error';
+    body.innerHTML='<tr><td colspan="9" style="color:var(--red);text-align:center;padding:10px">Scan error</td></tr>';
   }
 }
 
@@ -1133,7 +1133,7 @@ async function runBacktest(){
 
     setStatus(`✓ Backtest končan — ${s.trades} poslov`);
   }catch(e){
-    setStatus('⚠ Backtest napaka: '+e.message,'red');
+    setStatus('⚠ Backtest error: '+e.message,'red');
     console.error(e);
   }
 }
@@ -1141,13 +1141,13 @@ async function runBacktest(){
 // ── RISK / PORTFOLIO TRACKER ─────────────────────
 async function addPos(){
   const ticker = document.getElementById('nTick').value.toUpperCase().trim();
-  if(!ticker){ alert('Vnesi ticker'); return; }
+  if(!ticker){ alert('Enter a ticker'); return; }
   const entry = parseFloat(document.getElementById('nEntry').value);
-  if(!entry || entry <= 0){ alert('Vnesi nakupno ceno'); return; }
+  if(!entry || entry <= 0){ alert('Enter entry price'); return; }
   const btn = document.getElementById('addBtn');
   const msg = document.getElementById('addMsg');
   btn.disabled = true; btn.textContent = '...';
-  msg.textContent = 'Dodajam ' + ticker + ' in pridobivam live ceno…';
+  msg.textContent = 'Adding ' + ticker + ' and fetching live price…';
   try {
     const res = await fetch('/api/portfolio/add', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -1166,10 +1166,10 @@ async function addPos(){
       setTimeout(()=>{ msg.textContent=''; msg.style.color='var(--text3)'; }, 2000);
       loadPortfolio();
     } else {
-      msg.style.color='var(--red)'; msg.textContent='⚠ ' + (d.error||'Napaka');
+      msg.style.color='var(--red)'; msg.textContent='⚠ ' + (d.error||'Error');
     }
   } catch(e){
-    msg.style.color='var(--red)'; msg.textContent='⚠ Napaka pri dodajanju';
+    msg.style.color='var(--red)'; msg.textContent='⚠ Error adding position';
   }
   btn.disabled=false; btn.textContent='+ ADD';
 }
@@ -1185,16 +1185,16 @@ async function loadPortfolio(){
     const res = await fetch('/api/portfolio');
     const d = await res.json();
     renderPortfolio(d.positions || []);
-    document.getElementById('portStatus').textContent = 'Posodobljeno ' + new Date().toLocaleTimeString('sl-SI');
+    document.getElementById('portStatus').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB');
   } catch(e){
-    document.getElementById('portStatus').textContent = '⚠ Napaka';
-    document.getElementById('portBody').innerHTML = '<tr><td colspan="11" style="color:var(--red);text-align:center;padding:16px">Napaka pri nalaganju</td></tr>';
+    document.getElementById('portStatus').textContent = '⚠ Error';
+    document.getElementById('portBody').innerHTML = '<tr><td colspan="11" style="color:var(--red);text-align:center;padding:16px">Error loading portfolio</td></tr>';
   }
 }
 
 function renderPortfolio(positions){
   if(!positions.length){
-    document.getElementById('portBody').innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Ni pozicij. Dodaj svojo prvo pozicijo spodaj.</td></tr>';
+    document.getElementById('portBody').innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">No positions. Add your first position below.</td></tr>';
     renderRiskMetrics([]);
     return;
   }
@@ -1275,14 +1275,14 @@ async function renderRiskMetrics(positions){
   // Correlation matrix
   const tks = positions.map(p=>p.ticker).slice(0,8);
   if(tks.length < 2){
-    document.getElementById('corrBox').innerHTML='<div style="color:var(--text3);padding:16px;text-align:center">Dodaj vsaj 2 poziciji</div>';
+    document.getElementById('corrBox').innerHTML='<div style="color:var(--text3);padding:16px;text-align:center">Add at least 2 positions</div>';
   } else {
     document.getElementById('corrBox').innerHTML='<div class="loader">Računam korelacije</div>';
     document.getElementById('corrLbl').textContent='NALAGAM…';
     fetch(`/api/correlations?tickers=${tks.join(',')}`)
       .then(r=>r.json())
       .then(d=>renderCorrMatrix(d))
-      .catch(()=>{ document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ Napaka</div>'; });
+      .catch(()=>{ document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ Error</div>'; });
   }
 }
 
@@ -1290,8 +1290,8 @@ async function renderRiskMetrics(positions){
 function renderCorrMatrix(d){
   const lbl = document.getElementById('corrLbl');
   if(!d || d.error || !d.matrix){
-    document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ '+( d&&d.error||'Napaka')+'</div>';
-    lbl.textContent='NAPAKA'; return;
+    document.getElementById('corrBox').innerHTML='<div style="color:var(--red);padding:10px">⚠ '+( d&&d.error||'Error')+'</div>';
+    lbl.textContent='ERROR'; return;
   }
   const tks = d.tickers;
   lbl.textContent = `PRAVI — ${d.days}D PODATKI`;
@@ -1361,7 +1361,7 @@ async function loadNewsEarnings(){
   renderNewsFeed(newsRes.news||[]);
   renderEarnings(earnRes, ticker);
   renderEpsChart(earnRes.history||[]);
-  setStatus(`✓ News & earnings za ${ticker} naloženi`);
+  setStatus(`✓ News & earnings loaded for ${ticker}`);
 }
 
 function renderNewsFeed(news){
@@ -1488,9 +1488,9 @@ async function loadEarningsCalendar(){
       </tr>`;
     }).join('');
     document.getElementById('calLoadingLbl').textContent=`${cal.length} DELNIC`;
-    setStatus(`✓ Earnings calendar naložen — ${cal.length} delnic`);
+    setStatus(`✓ Earnings calendar loaded — ${cal.length} stocks`);
   }catch(e){
-    setStatus('⚠ Napaka pri nalaganju calendar','red');
+    setStatus('⚠ Error loading calendar','red');
   }
 }
 
@@ -1548,7 +1548,7 @@ async function runAnomalyScan(){
 
     if(d.error){
       document.getElementById('anomalyMsg').innerHTML =
-        `<div style="color:var(--red)">&#9888; NAPAKA: ${d.error}</div>`;
+        `<div style="color:var(--red)">&#9888; ERROR: ${d.error}</div>`;
       return;
     }
 
@@ -1569,7 +1569,7 @@ async function runAnomalyScan(){
   } catch(e){
     clearInterval(timer);
     document.getElementById('anomalyMsg').innerHTML =
-      `<div style="color:var(--red)">&#9888; Napaka pri klicu API: ${e.message}</div>`;
+      `<div style="color:var(--red)">&#9888; API call error: ${e.message}</div>`;
   } finally {
     btn.disabled = false;
     btn.textContent = '&#9658; RUN SCAN';
@@ -1584,12 +1584,12 @@ function renderAnomalyTable(){
   const rows = _anomalyData.results.filter(r=> filter==='ALL' || r.signal===filter);
 
   document.getElementById('anomalyTableTitle').textContent =
-    `REZULTATI — ${rows.length} ANOMALIJ ${filter!=='ALL'?'('+filter+')':''} | ${_anomalyData.candidates} DELNIC Z EARNINGS V 14 DNEH`;
+    `RESULTS — ${rows.length} ANOMALIES ${filter!=='ALL'?'('+filter+')':''} | ${_anomalyData.candidates} STOCKS WITH EARNINGS IN 14 DAYS`;
 
   if(rows.length === 0){
     document.getElementById('anomalyMsg').style.display = 'block';
     document.getElementById('anomalyMsg').innerHTML =
-      `<div style="color:var(--text3)">Ni anomalij za filter: <span style="color:var(--cyan)">${filter}</span><br>
+      `<div style="color:var(--text3)">No anomalies for filter: <span style="color:var(--cyan)">${filter}</span><br>
        <span style="font-size:9px">Morda ni delnic z earnings v naslednjih 14 dneh.</span></div>`;
     document.getElementById('anomalyTableWrap').style.display = 'none';
     return;
@@ -1686,7 +1686,7 @@ const PDF_CSS = `
 
 function pdfHeader(title){
   const now = new Date();
-  const dt = now.toLocaleDateString('sl-SI') + ' ' + now.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+  const dt = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   return '<div class="pdf-header"><div><div class="pdf-logo">AlphaEdge<small>AI-POWERED QUANT RESEARCH</small></div>'
     + '<div style="font-size:11px;margin-top:6px;color:#333">' + title + '</div></div>'
     + '<div class="pdf-meta"><div><b>Datum izvoza:</b> ' + dt + '</div>'
@@ -1824,8 +1824,8 @@ async function saveAlertConfig(){
   };
   const r = await fetch('/api/alerts/config',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(data)}).then(r=>r.json()).catch(e=>({error:e.message}));
-  if(r.ok){ msg.style.color='var(--green)'; msg.textContent='Shranjeno!'; setTimeout(()=>msg.textContent='',2000); }
-  else{ msg.style.color='var(--red)'; msg.textContent=r.error||'Napaka'; }
+  if(r.ok){ msg.style.color='var(--green)'; msg.textContent='Saved!'; setTimeout(()=>msg.textContent='',2000); }
+  else{ msg.style.color='var(--red)'; msg.textContent=r.error||'Error'; }
 }
 
 async function testAlertEmail(){
@@ -1842,7 +1842,7 @@ async function testAlertEmail(){
   const r = await fetch('/api/alerts/test',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(data)}).then(r=>r.json()).catch(e=>({error:e.message}));
   msg.style.color = r.ok ? 'var(--green)' : 'var(--red)';
-  msg.textContent = r.msg || r.error || 'Napaka';
+  msg.textContent = r.msg || r.error || 'Error';
 }
 
 async function runAlertNow(){
@@ -1850,7 +1850,7 @@ async function runAlertNow(){
   msg.style.color='var(--yellow)'; msg.textContent='Posiljam...';
   const r = await fetch('/api/alerts/run-now',{method:'POST'}).then(r=>r.json()).catch(e=>({error:e.message}));
   msg.style.color = r.ok ? 'var(--green)' : 'var(--red)';
-  msg.textContent = r.msg || r.error || 'Napaka';
+  msg.textContent = r.msg || r.error || 'Error';
 }
 
 // ── CHANGE PASSWORD MODAL (vsi userji) ────────────────────
@@ -1876,11 +1876,11 @@ async function submitChangePw(){
   const msg = document.getElementById('cpMsg');
   if(!old_password || !new_password){msg.style.color='var(--red)';msg.textContent='Izpolni vsa polja';return;}
   if(new_password !== new_password2){msg.style.color='var(--red)';msg.textContent='Novi gesli se ne ujemata';return;}
-  if(new_password.length < 6){msg.style.color='var(--red)';msg.textContent='Geslo mora biti vsaj 6 znakov';return;}
+  if(new_password.length < 6){msg.style.color='var(--red)';msg.textContent='Password must be at least 6 characters';return;}
   const r = await fetch('/admin/change-password',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({old_password,new_password})}).then(r=>r.json()).catch(e=>({error:e.message}));
-  if(r.ok){msg.style.color='var(--green)';msg.textContent='Geslo uspešno spremenjeno!';}
-  else{msg.style.color='var(--red)';msg.textContent=r.error||'Napaka pri spremembi gesla';}
+  if(r.ok){msg.style.color='var(--green)';msg.textContent='Password changed successfully!';}
+  else{msg.style.color='var(--red)';msg.textContent=r.error||'Error changing password';}
 }
 
 // ── ADMIN PANEL ───────────────────────────────────────────
@@ -1915,12 +1915,12 @@ async function addAdminUser(){
   const p=document.getElementById('newPassword').value;
   const e=document.getElementById('newEmail').value.trim();
   const msg=document.getElementById('adminMsg');
-  if(!u||!p){msg.style.color='var(--red)';msg.textContent='Manjka username ali geslo';return;}
+  if(!u||!p){msg.style.color='var(--red)';msg.textContent='Missing username or password';return;}
   const r=await fetch('/admin/users/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,email:e})}).then(r=>r.json());
   if(r.ok){msg.style.color='var(--green)';msg.textContent='Uporabnik '+r.username+' dodan!';
     document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';document.getElementById('newEmail').value='';
     await loadAdminUsers();}
-  else{msg.style.color='var(--red)';msg.textContent=r.error||'Napaka';}
+  else{msg.style.color='var(--red)';msg.textContent=r.error||'Error';}
 }
 
 
@@ -1988,7 +1988,7 @@ async function runAccuracy(){
   // Stats row
   let html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid var(--border);margin-bottom:0">';
   const stats = [
-    {l:'SKUPAJ SIGNALOV', v: s.total, c:'var(--cyan)'},
+    {l:'TOTAL SIGNALS', v: s.total, c:'var(--cyan)'},
     {l:'WIN RATE (10d)', v: s.win_rate+'%', c: wrColor},
     {l:'AVG RETURN 10d', v: (s.avg_ret10>=0?'+':'')+s.avg_ret10+'%', c: retColor},
     {l:'CRITICAL SIGNALI', v: s.critical_count, c:'var(--red)'},
@@ -2042,7 +2042,7 @@ async function loadWatchlist(){
   _wlData = r.tickers || [];
   document.getElementById('wlCount').textContent = _wlData.length + ' delnic';
   if(!_wlData.length){
-    document.getElementById('wlBody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Dodaj delnice s poljem zgoraj</td></tr>';
+    document.getElementById('wlBody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:20px">Add stocks using the field above</td></tr>';
     return;
   }
   renderWatchlistSkeleton();
@@ -2051,7 +2051,7 @@ async function loadWatchlist(){
 function renderWatchlistSkeleton(){
   document.getElementById('wlBody').innerHTML = _wlData.map((t,i)=>
     '<tr id="wlr-'+t.ticker+'"><td>'+(i+1)+'</td><td><b style="color:var(--cyan)">'+t.ticker+'</b></td>'
-    +'<td colspan="9" style="color:var(--text3)">Klikni SCAN ALL za podatke</td></tr>'
+    +'<td colspan="9" style="color:var(--text3)">Click SCAN ALL for data</td></tr>'
   ).join('');
 }
 
@@ -2060,7 +2060,7 @@ async function addToWatchlist(){
   const ticker = input.value.trim().toUpperCase();
   const msg = document.getElementById('wlMsg');
   if(!ticker){return;}
-  msg.style.color='var(--yellow)'; msg.textContent='Dodajam...';
+  msg.style.color='var(--yellow)'; msg.textContent='Adding...';
   const r = await fetch('/api/watchlist/add',{method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({ticker})}).then(r=>r.json()).catch(e=>({error:e.message}));
@@ -2069,7 +2069,7 @@ async function addToWatchlist(){
     input.value='';
     await loadWatchlist();
   } else {
-    msg.style.color='var(--red)'; msg.textContent=r.error||'Napaka';
+    msg.style.color='var(--red)'; msg.textContent=r.error||'Error';
   }
   setTimeout(()=>msg.textContent='', 3000);
 }
@@ -2083,7 +2083,7 @@ async function removeFromWatchlist(ticker){
 
 async function scanWatchlist(){
   if(!_wlData.length){
-    document.getElementById('wlMsg').textContent='Najprej dodaj delnice';
+    document.getElementById('wlMsg').textContent='Add stocks first';
     return;
   }
   const btn = document.getElementById('wlScanBtn');
@@ -2100,7 +2100,7 @@ async function scanWatchlist(){
     return;
   }
   
-  msg.style.color='var(--green)'; msg.textContent='Posodobljeno '+new Date().toLocaleTimeString();
+  msg.style.color='var(--green)'; msg.textContent='Updated '+new Date().toLocaleTimeString('en-GB');
   document.getElementById('wlCount').textContent = r.results.length + ' delnic';
   
   document.getElementById('wlBody').innerHTML = r.results.map((s,i)=>{
