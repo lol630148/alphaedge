@@ -2137,5 +2137,14 @@ loadVolumeAnomaly();
 startClock();
 startMarketTicker();
 </script>
+<script>
+// Session polling - redirect to login if user is deleted/deactivated
+setInterval(async function() {
+  try {
+    const r = await fetch('/api/check-session');
+    if (r.status === 401) window.location.href = '/login';
+  } catch(e) {}
+}, 10000);
+</script>
 </body>
 </html>

@@ -445,6 +445,11 @@ def logout():
     session.clear()
     return redirect('/login')
 
+@app.route('/api/check-session')
+@login_required
+def check_session():
+    return jsonify({'ok': True})
+
 @app.route('/admin/users')
 @admin_required
 def admin_users():
