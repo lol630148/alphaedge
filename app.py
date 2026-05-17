@@ -106,6 +106,16 @@ def login_required(f):
             if request.path.startswith('/api/'):
                 return jsonify({'error': 'Unauthorized', 'redirect': '/login'}), 401
             return redirect('/login')
+        # Check if user is still active in DB
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        user = conn.execute('SELECT is_active FROM users WHERE id=?', (session['user_id'],)).fetchone()
+        conn.close()
+        if not user or not user['is_active']:
+            session.clear()
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Unauthorized', 'redirect': '/login'}), 401
+            return redirect('/login')
         return f(*args, **kwargs)
     return decorated
 
