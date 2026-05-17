@@ -1254,8 +1254,8 @@ async function renderRiskMetrics(positions){
       <div class="gauge-bar" style="height:9px"><div class="gauge-fill" style="width:${Math.min(100,rL*3500)}%;background:${rC}"></div></div>
       <div style="color:${rC};font-size:11px;font-weight:bold;margin-top:4px">${rL>.03?'⚠ HIGH RISK':rL>.02?'◈ MODERATE':'✓ LOW RISK'}</div>
     </div><hr class="dv">
-    ${[{k:'SKUPNI P&L',v:(totalPnL>=0?'+':'')+fmtD(totalPnL),c:cx(totalPnL)},
-       {k:'POZICIJE',v:positions.length,c:C.text},
+    ${[{k:'TOTAL P&L',v:(totalPnL>=0?'+':'')+fmtD(totalPnL),c:cx(totalPnL)},
+       {k:'POSITIONS',v:positions.length,c:C.text},
        {k:'LONG $',v:fmtD(positions.filter(p=>p.direction==='LONG').reduce((a,p)=>a+p.exposure,0)),c:C.green},
        {k:'SHORT $',v:fmtD(positions.filter(p=>p.direction==='SHORT').reduce((a,p)=>a+p.exposure,0)),c:C.red},
     ].map(m=>`<div class="risk-metric"><span class="rk">${m.k}</span><span class="rv" style="color:${m.c}">${m.v}</span></div>`).join('')}`;
