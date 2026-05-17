@@ -352,7 +352,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     </div>
     <div class="pnl">
       <div class="pnl-hdr"><span class="pnl-title">SIGNAL STRENGTH</span></div>
-      <div class="pnl-body" id="gaugesBox"><div class="loader">Čakam na analizo</div></div>
+      <div class="pnl-body" id="gaugesBox"><div class="loader">Waiting for analysis</div></div>
     </div>
   </div>
   <div class="pnl">
@@ -367,7 +367,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     </div>
     <div class="pnl-body">
       <div class="scrl" style="max-height:180px">
-        <table class="tbl"><thead><tr><th>TICKER</th><th>NAME</th><th>SEKTOR</th><th>CENA</th><th>SIGNAL</th><th>GAP %</th><th>DRIFT %</th><th>VOL RATIO</th><th></th></tr></thead>
+        <table class="tbl"><thead><tr><th>TICKER</th><th>NAME</th><th>SECTOR</th><th>PRICE</th><th>SIGNAL</th><th>GAP %</th><th>DRIFT %</th><th>VOL RATIO</th><th></th></tr></thead>
         <tbody id="peadBody"><tr><td colspan="9" style="text-align:center;color:var(--text3);padding:16px">Click SCAN to detect PEAD signals across the universe</td></tr></tbody>
         </table>
       </div>
@@ -509,7 +509,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       <div class="pnl">
         <div class="pnl-hdr"><span class="pnl-title">📅 NEXT EARNINGS</span></div>
         <div class="pnl-body" id="earningsNext">
-          <div class="loader">Čakam na load</div>
+          <div class="loader">Waiting for data</div>
         </div>
       </div>
 
@@ -598,9 +598,9 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
           <thead><tr>
             <th>#</th>
             <th>TICKER</th>
-            <th>SEKTOR</th>
-            <th>CENA</th>
-            <th>DAN %</th>
+            <th>SECTOR</th>
+            <th>PRICE</th>
+            <th>DAY %</th>
             <th>DNI DO EARN.</th>
             <th title="90-day correlation with sector ETF">CORR 90d</th>
             <th title="15-day correlation with sector ETF">CORR 15d</th>
@@ -736,7 +736,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
         <table class="tbl" id="wlTable">
           <thead><tr>
             <th>#</th><th>TICKER</th><th>NAME</th><th>SECTOR</th>
-            <th>CENA</th><th>DAN %</th><th>RSI</th><th>SIGNAL</th>
+            <th>PRICE</th><th>DAY %</th><th>RSI</th><th>SIGNAL</th>
             <th>VOL/AVG</th><th>DNI DO EARN.</th><th></th>
           </tr></thead>
           <tbody id="wlBody">
@@ -1621,7 +1621,7 @@ function renderAnomalyTable(){
     return `<tr style="${r.signal==='CRITICAL'?'border-left:2px solid var(--red)':r.signal==='HIGH'?'border-left:2px solid var(--orange)':''}">
       <td style="color:var(--text3)">${i+1}</td>
       <td>
-        <span style="color:var(--cyan);font-weight:bold;cursor:pointer" onclick="quickStock('${r.ticker}')" title="Odpri signal analizo">${r.ticker}</span>
+        <span style="color:var(--cyan);font-weight:bold;cursor:pointer" onclick="quickStock('${r.ticker}')" title="Open signal analysis">${r.ticker}</span>
         <div style="color:var(--text3);font-size:8px">${r.earn_date}</div>
       </td>
       <td style="color:var(--text3);font-size:10px">${r.sector}</td>
@@ -2013,8 +2013,8 @@ async function runAccuracy(){
   // Signals table
   if(r.signals && r.signals.length){
     html += '<div class="scrl" style="max-height:280px"><table class="tbl"><thead><tr>'+
-      '<th>DATUM</th><th>TICKER</th><th>SEKTOR</th><th>SCORE</th><th>SIGNAL</th>'+
-      '<th>CENA</th><th>RET 5d</th><th>RET 10d</th><th>RET 20d</th></tr></thead><tbody>';
+      '<th>DATE</th><th>TICKER</th><th>SECTOR</th><th>SCORE</th><th>SIGNAL</th>'+
+      '<th>PRICE</th><th>RET 5d</th><th>RET 10d</th><th>RET 20d</th></tr></thead><tbody>';
     html += r.signals.map(s=>{
       const sc = s.signal==='CRITICAL'?'bdg-sell':'bdg-buy';
       const r5c = s.ret5!==null?cc(s.ret5):'';
