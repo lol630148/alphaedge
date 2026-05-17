@@ -95,7 +95,7 @@ def get_user(username):
 def get_all_users():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    rows = conn.execute('SELECT id,username,email,role,is_active,created_at FROM users ORDER BY id').fetchall()
+    rows = conn.execute('SELECT id,username,email,role,is_active,created_at FROM users WHERE is_active=1 ORDER BY id').fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
