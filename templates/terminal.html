@@ -228,14 +228,14 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 <div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.92);z-index:200;align-items:center;justify-content:center">
   <div style="background:var(--panel);border:1px solid var(--bord2);border-radius:3px;width:520px;max-width:95vw;padding:0;box-shadow:0 0 60px rgba(0,212,255,.1)">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
-      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">⚙ UPRAVLJANJE UPORABNIKOV</span>
+      <span style="color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:bold">⚙ USER MANAGEMENT</span>
       <button onclick="hideAdminPanel()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">✕</button>
     </div>
     <div style="padding:14px">
 
       <!-- User list -->
       <div style="margin-bottom:16px">
-        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">AKTIVNI UPORABNIKI</div>
+        <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:8px">ACTIVE USERS</div>
         <div id="adminUserList" style="max-height:180px;overflow-y:auto"></div>
       </div>
 
@@ -249,7 +249,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
             <input type="password" id="newUserPw" class="fi" placeholder="••••••" style="width:100%"></div>
           <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">EMAIL</div>
             <input type="text" id="newUserEmail" class="fi" placeholder="john@firm.com" style="width:100%"></div>
-          <button class="btn g" onclick="adminAddUser()" style="white-space:nowrap">+ ADD</button>
+          <button class="btn g" onclick="addAdminUser()" style="white-space:nowrap">+ ADD</button>
         </div>
         <div id="adminAddMsg" style="font-size:10px;margin-top:6px;min-height:14px"></div>
       </div>
@@ -1893,7 +1893,7 @@ async function loadAdminUsers(){
   const list=document.getElementById('adminUserList');
   list.innerHTML='<div style="color:var(--text3)">Loading...</div>';
   const r=await fetch('/admin/users').then(r=>r.json()).catch(()=>({users:[]}));
-  if(!r.users||!r.users.length){list.innerHTML='<div style="color:var(--text3)">Ni uporabnikov</div>';return;}
+  if(!r.users||!r.users.length){list.innerHTML='<div style="color:var(--text3)">No users found</div>';return;}
   list.innerHTML=r.users.map(u=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
       <div>
@@ -1901,11 +1901,11 @@ async function loadAdminUsers(){
         <span style="color:var(--text3);margin-left:8px;font-size:10px">${u.role||'user'}</span>
         ${u.email?`<span style="color:var(--text3);margin-left:8px;font-size:10px">${u.email}</span>`:''}
       </div>
-      <button onclick="deleteUser(${u.id},'${u.username}')" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:3px 8px;font-family:var(--mono);font-size:9px;cursor:pointer;border-radius:2px;">BRIŠI</button>
+      <button onclick="deleteUser(${u.id},'${u.username}')" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:3px 8px;font-family:var(--mono);font-size:9px;cursor:pointer;border-radius:2px;">DELETE</button>
     </div>`).join('');
 }
 async function deleteUser(id,name){
-  if(!confirm('Brišeš uporabnika '+name+'?'))return;
+  if(!confirm('Delete user '+name+'?'))return;
   const r=await fetch('/admin/users/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json());
   if(r.ok)await loadAdminUsers();
   else alert(r.error);
@@ -1917,7 +1917,7 @@ async function addAdminUser(){
   const msg=document.getElementById('adminMsg');
   if(!u||!p){msg.style.color='var(--red)';msg.textContent='Missing username or password';return;}
   const r=await fetch('/admin/users/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,email:e})}).then(r=>r.json());
-  if(r.ok){msg.style.color='var(--green)';msg.textContent='Uporabnik '+r.username+' dodan!';
+  if(r.ok){msg.style.color='var(--green)';msg.textContent='User '+r.username+' added!';
     document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';document.getElementById('newEmail').value='';
     await loadAdminUsers();}
   else{msg.style.color='var(--red)';msg.textContent=r.error||'Error';}
