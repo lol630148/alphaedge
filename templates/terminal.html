@@ -245,7 +245,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:end">
           <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">USERNAME</div>
             <input type="text" id="newUserName" class="fi" placeholder="john" style="width:100%"></div>
-          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">GESLO</div>
+          <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">PASSWORD</div>
             <input type="password" id="newUserPw" class="fi" placeholder="••••••" style="width:100%"></div>
           <div><div style="color:var(--text3);font-size:8px;margin-bottom:3px">EMAIL</div>
             <input type="text" id="newUserEmail" class="fi" placeholder="john@firm.com" style="width:100%"></div>
@@ -1911,14 +1911,14 @@ async function deleteUser(id,name){
   else alert(r.error);
 }
 async function addAdminUser(){
-  const u=document.getElementById('newUsername').value.trim();
-  const p=document.getElementById('newPassword').value;
-  const e=document.getElementById('newEmail').value.trim();
-  const msg=document.getElementById('adminMsg');
+  const u=document.getElementById('newUserName').value.trim();
+  const p=document.getElementById('newUserPw').value;
+  const e=document.getElementById('newUserEmail').value.trim();
+  const msg=document.getElementById('adminAddMsg');
   if(!u||!p){msg.style.color='var(--red)';msg.textContent='Missing username or password';return;}
   const r=await fetch('/admin/users/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,email:e})}).then(r=>r.json());
   if(r.ok){msg.style.color='var(--green)';msg.textContent='User '+r.username+' added!';
-    document.getElementById('newUsername').value='';document.getElementById('newPassword').value='';document.getElementById('newEmail').value='';
+    document.getElementById('newUserName').value='';document.getElementById('newUserPw').value='';document.getElementById('newUserEmail').value='';
     await loadAdminUsers();}
   else{msg.style.color='var(--red)';msg.textContent=r.error||'Error';}
 }
