@@ -547,12 +547,12 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
     <div>
       <div style="font-size:14px;font-weight:bold;color:var(--cyan);letter-spacing:2px">⚡ PRE-EARNINGS ANOMALY SCANNER</div>
-      <div style="color:var(--text3);font-size:9px;letter-spacing:1px;margin-top:2px">Iščemo nenavadne korelacijske, volumske in momentum vzorce pri ~150 S&P 500 delnicah pred earnings</div>
+      <div style="color:var(--text3);font-size:9px;letter-spacing:1px;margin-top:2px">Screening for unusual correlation, volume and momentum patterns across ~150 S&P 500 stocks before earnings</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span id="anomalyFilterLbl" style="color:var(--text3);font-size:9px">FILTER:</span>
       <select id="anomalyFilter" class="fi" style="width:110px;font-size:10px" onchange="renderAnomalyTable()">
-        <option value="ALL">VSE STOPNJE</option>
+        <option value="ALL">ALL LEVELS</option>
         <option value="CRITICAL">⚠ CRITICAL</option>
         <option value="HIGH">▲ HIGH</option>
         <option value="MEDIUM">◈ MEDIUM</option>
@@ -566,10 +566,10 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <!-- Stats bar -->
   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px" id="anomalyStats">
     <div class="sb"><div class="sv" style="font-size:18px;color:var(--text2)" id="aStat1">—</div><div class="sl">SCANNED</div></div>
-    <div class="sb"><div class="sv" style="font-size:18px;color:var(--cyan)"  id="aStat2">—</div><div class="sl">Z EARNINGS (14d)</div></div>
-    <div class="sb"><div class="sv" style="font-size:18px;color:var(--red)"   id="aStat3">—</div><div class="sl">ANOMALIJE</div></div>
-    <div class="sb"><div class="sv" style="font-size:18px;color:var(--yellow)" id="aStat4">—</div><div class="sl">ČAS SKENIRANJA</div></div>
-    <div class="sb"><div class="sv" style="font-size:18px;color:var(--text3)" id="aStat5">—</div><div class="sl">POSODOBLJENO</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--cyan)"  id="aStat2">—</div><div class="sl">WITH EARNINGS (14d)</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--red)"   id="aStat3">—</div><div class="sl">ANOMALIES</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--yellow)" id="aStat4">—</div><div class="sl">SCAN TIME</div></div>
+    <div class="sb"><div class="sv" style="font-size:18px;color:var(--text3)" id="aStat5">—</div><div class="sl">UPDATED</div></div>
   </div>
 
   <!-- Score legend -->
@@ -579,14 +579,14 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
     <span class="bdg" style="background:rgba(255,123,44,.15);color:var(--orange);border:1px solid rgba(255,123,44,.4)">▲ HIGH ≥45</span>
     <span class="bdg" style="background:rgba(255,194,0,.12);color:var(--yellow);border:1px solid rgba(255,194,0,.35)">◈ MEDIUM ≥25</span>
     <span class="bdg" style="background:rgba(112,144,176,.1);color:var(--text2);border:1px solid var(--border)">▽ LOW &lt;25</span>
-    <div style="font-size:9px;color:var(--text3);margin-left:12px;align-self:center">SESTAVLJEN IZ: Korelacijska anomalija (40pt) + Volumska anomalija (30pt) + Momentum divergenca (30pt)</div>
+    <div style="font-size:9px;color:var(--text3);margin-left:12px;align-self:center">COMPOSED OF: Correlation anomaly (40pt) + Volume anomaly (30pt) + Momentum divergence (30pt)</div>
   </div>
 
   <!-- Results table -->
   <div class="pnl">
     <div class="pnl-hdr">
       <span class="pnl-title" id="anomalyTableTitle">RESULTS — CLICK RUN SCAN</span>
-      <span style="color:var(--text3);font-size:8px">RAZVRŠČENO PO ANOMALY SCORE ↓</span>
+      <span style="color:var(--text3);font-size:8px">SORTED BY ANOMALY SCORE ↓</span>
     </div>
     <div class="pnl-body" style="padding:0">
       <div id="anomalyMsg" style="padding:24px;text-align:center;color:var(--text3);font-size:11px">
@@ -602,9 +602,9 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
             <th>CENA</th>
             <th>DAN %</th>
             <th>DNI DO EARN.</th>
-            <th title="90-dnevna korelacija s sektorjem">CORR 90d</th>
-            <th title="15-dnevna korelacija s sektorjem">CORR 15d</th>
-            <th title="Padec korelacije = dekorrelacija od sektorja">CORR Δ</th>
+            <th title="90-day correlation with sector ETF">CORR 90d</th>
+            <th title="15-day correlation with sector ETF">CORR 15d</th>
+            <th title="Correlation drop = decorrelation from sector">CORR Δ</th>
             <th title="Volumen zadnjih 10d vs 90d povprečje">VOL RATIO</th>
             <th title="Delnica vs sektor ETF, 20-dnevni return">MOM DIV</th>
             <th title="Skupni anomaly score 0-100">SCORE</th>
@@ -618,18 +618,18 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
 
   <!-- Methodology note -->
   <div style="margin-top:10px;padding:10px 12px;background:rgba(0,212,255,.03);border:1px solid var(--border);border-radius:2px;font-size:9px;color:var(--text3);line-height:1.7">
-    <span style="color:var(--cyan);font-weight:bold">METODOLOGIJA</span> &nbsp;|&nbsp;
-    <span style="color:var(--text2)">Korelacijska anomalija:</span> 90-dnevna vs 15-dnevna korelacija z sektorskim ETF. Padec = dekorrelacija pred earnings. &nbsp;|&nbsp;
-    <span style="color:var(--text2)">Volumska anomalija:</span> 10d vs 90d povprecje — ratio &gt;1.5x = nenavadna aktivnost. &nbsp;|&nbsp;
-    <span style="color:var(--text2)">Momentum divergenca:</span> 20d return delnice minus sektor ETF.
+    <span style="color:var(--cyan);font-weight:bold">METHODOLOGY</span> &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Correlation anomaly:</span> 90-day vs 15-day correlation with sector ETF. Drop = decorrelation before earnings. &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Volume anomaly:</span> 10d vs 90d average — ratio &gt;1.5x = unusual activity. &nbsp;|&nbsp;
+    <span style="color:var(--text2)">Momentum divergence:</span> 20d stock return minus sector ETF.
   </div>
 
 
   <!-- Accuracy Backtest -->
   <div class="pnl" style="margin-top:10px">
     <div class="pnl-hdr" style="justify-content:space-between">
-      <span class="pnl-title">&#128200; HISTORICNA TOCNOST SIGNALOV — 6 MESECEV</span>
-      <button class="btn g" id="accBtn" onclick="runAccuracy()" style="font-size:9px;padding:3px 10px">&#9654; IZRACUNAJ TOCNOST</button>
+      <span class="pnl-title">&#128200; HISTORICAL SIGNAL ACCURACY — 6 MONTHS</span>
+      <button class="btn g" id="accBtn" onclick="runAccuracy()" style="font-size:9px;padding:3px 10px">&#9654; CALCULATE ACCURACY</button>
     </div>
     <div class="pnl-body" id="accBody">
       <div style="color:var(--text3);font-size:11px;padding:12px;text-align:center">
@@ -641,7 +641,7 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
   <!-- Alert Configuration (samo admin) -->
   <div class="pnl" style="margin-top:10px" id="alertConfigPanel">
     <div class="pnl-hdr">
-      <span class="pnl-title">&#128276; EMAIL ALERT KONFIGURACIJA</span>
+      <span class="pnl-title">&#128276; EMAIL ALERT CONFIGURATION</span>
       <span style="color:var(--text3);font-size:8px">Avtomatski email ob anomalijah — samo admin</span>
     </div>
     <div class="pnl-body">
@@ -655,13 +655,13 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
           <input type="number" id="alertSmtpPort" class="fi" value="587" style="width:100%">
         </div>
         <div>
-          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">CAS POSILJANJA</div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">SEND TIME</div>
           <input type="time" id="alertSendTime" class="fi" value="07:00" style="width:100%">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div>
-          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">GMAIL / EMAIL NASLOV (posiljatelj)</div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">GMAIL / EMAIL ADDRESS (sender)</div>
           <input type="text" id="alertSmtpUser" class="fi" placeholder="vas@gmail.com" style="width:100%">
         </div>
         <div>
@@ -671,11 +671,11 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       </div>
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px">
         <div>
-          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">PREJEMNIKI (loceni z vejico)</div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">RECIPIENTS (comma separated)</div>
           <input type="text" id="alertRecipients" class="fi" placeholder="client@firm.com, boss@firm.com" style="width:100%">
         </div>
         <div>
-          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">MIN. SIGNAL STOPNJA</div>
+          <div style="color:var(--text3);font-size:8px;letter-spacing:1px;margin-bottom:3px">MIN. SIGNAL LEVEL</div>
           <select id="alertMinSignal" class="fi" style="width:100%">
             <option value="CRITICAL">Samo CRITICAL</option>
             <option value="HIGH" selected>HIGH in visje</option>
@@ -687,15 +687,15 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:10px 0}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
           <input type="checkbox" id="alertEnabled" style="width:14px;height:14px">
-          <span style="color:var(--text2);font-size:10px">OMOGOCI DNEVNE ALERTE</span>
+          <span style="color:var(--text2);font-size:10px">ENABLE DAILY ALERTS</span>
         </label>
         <button class="btn g" onclick="saveAlertConfig()" style="font-size:10px">SAVE</button>
-        <button class="btn" onclick="testAlertEmail()" style="font-size:10px">TESTIRAJ EMAIL</button>
-        <button class="btn" onclick="runAlertNow()" style="font-size:10px;border-color:var(--yellow);color:var(--yellow)">POŠLJI ZDAJ</button>
+        <button class="btn" onclick="testAlertEmail()" style="font-size:10px">TEST EMAIL</button>
+        <button class="btn" onclick="runAlertNow()" style="font-size:10px;border-color:var(--yellow);color:var(--yellow)">SEND NOW</button>
         <span id="alertMsg" style="font-size:10px;color:var(--text3)"></span>
       </div>
       <div style="margin-top:10px;padding:8px;background:rgba(255,194,0,.05);border:1px solid rgba(255,194,0,.2);border-radius:2px;font-size:9px;color:var(--text3);line-height:1.6">
-        <span style="color:var(--yellow)">GMAIL NAVODILA:</span>
+        <span style="color:var(--yellow)">GMAIL INSTRUCTIONS:</span>
         1. Vklopi 2-faktorsko avtentikacijo na Google racunu &nbsp;|&nbsp;
         2. Pojdi na myaccount.google.com &rarr; Varnost &rarr; App passwords &nbsp;|&nbsp;
         3. Ustvari App Password za "Mail" &nbsp;|&nbsp;
@@ -857,7 +857,7 @@ function showMovers(mode){
 function renderAlerts(){
   const alerts=[];
   allStocks.forEach(s=>{
-    if(s.volRatio>2.0) alerts.push({type:'watch',t:s.t,msg:`Volume ${s.volRatio.toFixed(1)}× iznad 20D povprečja — nenavadna aktivnost`});
+    if(s.volRatio>2.0) alerts.push({type:'watch',t:s.t,msg:`Volume ${s.volRatio.toFixed(1)}× above 20D average — unusual activity`});
     if(s.chg>3.5)      alerts.push({type:'buy',  t:s.t,msg:`Preboj +${s.chg.toFixed(1)}% — momentum kandidat`});
     if(s.chg<-3.5)     alerts.push({type:'sell', t:s.t,msg:`Padec ${s.chg.toFixed(1)}% — potencialen short`});
   });
@@ -1280,7 +1280,7 @@ async function renderRiskMetrics(positions){
   if(tks.length < 2){
     document.getElementById('corrBox').innerHTML='<div style="color:var(--text3);padding:16px;text-align:center">Add at least 2 positions</div>';
   } else {
-    document.getElementById('corrBox').innerHTML='<div class="loader">Računam korelacije</div>';
+    document.getElementById('corrBox').innerHTML='<div class="loader">Computing correlations</div>';
     document.getElementById('corrLbl').textContent='NALAGAM…';
     fetch(`/api/correlations?tickers=${tks.join(',')}`)
       .then(r=>r.json())
@@ -1339,7 +1339,7 @@ function renderCorrMatrix(d){
       </table>
     </div>
     <div style="margin-top:8px;font-size:9px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap">
-      <span style="color:var(--red)">■ visoka korelacija (>0.7)</span>
+      <span style="color:var(--red)">■ high correlation (>0.7)</span>
       <span style="color:var(--orange)">■ zmerna (0.4–0.7)</span>
       <span style="color:var(--text3)">■ nizka (0–0.4)</span>
       <span style="color:var(--cyan)">■ negativna (<0)</span>
@@ -1534,7 +1534,7 @@ async function runAnomalyScan(){
   document.getElementById('anomalyMsg').style.display = 'block';
   document.getElementById('anomalyMsg').innerHTML =
     `<div style="color:var(--yellow)">⏳ Prenašam podatke za ~150 delnic z Yahoo Finance…</div>
-     <div style="color:var(--text3);font-size:9px;margin-top:6px">Pridobivam earnings datume, računam korelacije in anomalije…<br>Prosim počakaj ~25-35 sekund</div>`;
+     <div style="color:var(--text3);font-size:9px;margin-top:6px">Fetching earnings dates, computing correlations and anomalies…<br>Please wait ~25-35 seconds</div>`;
   document.getElementById('anomalyTableWrap').style.display = 'none';
 
   // Animated dots
@@ -1753,9 +1753,9 @@ function exportAnomalyPDF(){
     + '<tbody>' + tableRows + '</tbody></table></div>'
     + '<div class="pdf-section" style="font-size:8px;color:#777;line-height:1.7">'
     + '<div class="pdf-section-title">Metodologija</div>'
-    + 'Korelacijska anomalija (0-40pt): 90d vs 15d korelacija z sektorskim ETF.<br>'
-    + 'Volumska anomalija (0-30pt): 10d volumensko povprecje vs 90d.<br>'
-    + 'Momentum divergenca (0-30pt): 20d return delnice minus sektor ETF.</div>'
+    + 'Correlation anomaly (0-40pt): 90d vs 15d correlation with sector ETF.<br>'
+    + 'Volume anomaly (0-30pt): 10d volume average vs 90d.<br>'
+    + 'Momentum divergence (0-30pt): 20d stock return minus sector ETF.</div>'
     + pdfFooter();
 
   openPdfWindow(html);
@@ -1789,12 +1789,12 @@ function exportSignalPDF(){
   const html = pdfHeader('SIGNAL ANALYSIS -- ' + (d.ticker||''))
     + '<div class="pdf-section"><div class="pdf-section-title">Trenutni kazalniki</div>' + metricsHtml + sigLine + '</div>'
     + '<div class="pdf-section"><div class="pdf-section-title">Zgodovina signalov - zadnjih 20 dni</div>'
-    + '<table><thead><tr><th>Datum</th><th>Cena</th><th>RSI</th><th>Momentum</th><th>Signal</th></tr></thead>'
+    + '<table><thead><tr><th>Date</th><th>Price</th><th>RSI</th><th>Momentum</th><th>Signal</th></tr></thead>'
     + '<tbody>' + lastRows + '</tbody></table></div>'
     + '<div class="pdf-section" style="font-size:8px;color:#777;line-height:1.7">'
     + '<div class="pdf-section-title">Metodologija</div>'
     + 'RSI (14): manj kot 30 = oversold (BUY), vec kot 70 = overbought (SELL).<br>'
-    + 'Momentum: 20-dnevni return. Vec kot +6% = BUY, manj kot -6% = SELL.</div>'
+    + 'Momentum: 20-day return. Above +6% = BUY, below -6% = SELL.</div>'
     + pdfFooter();
 
   openPdfWindow(html);
@@ -1974,10 +1974,10 @@ async function runAccuracy(){
   btn.disabled = true; btn.textContent = 'Racunam...';
   body.innerHTML = '<div style="color:var(--yellow);padding:16px;text-align:center">'+
     '<div style="font-size:12px;margin-bottom:6px">Analysing 30 stocks over 6 months of historical data...</div>'+
-    '<div style="color:var(--text3);font-size:10px">Preverjam korelacije, volumne, momentum za vsak dan — prosim pocakaj ~30s</div></div>';
+    '<div style="color:var(--text3);font-size:10px">Checking correlations, volumes, momentum for each day — please wait ~30s</div></div>';
 
   const r = await fetch('/api/anomaly-accuracy').then(r=>r.json()).catch(()=>({error:'Napaka pri povezavi'}));
-  btn.disabled = false; btn.textContent = '&#9654; IZRACUNAJ TOCNOST';
+  btn.disabled = false; btn.textContent = '&#9654; CALCULATE ACCURACY';
 
   if(r.error){
     body.innerHTML = '<div style="color:var(--red);padding:12px">&#9888; '+r.error+'</div>';
